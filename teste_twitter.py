@@ -6,10 +6,10 @@ install()
 import tweepy
 
 # Substitua essas variáveis pelas suas próprias credenciais
-consumer_key = '---'  # Chave de consumo da API do Twitter
-consumer_secret = '---'  # Chave secreta de consumo da API do Twitter
-access_token = '---'  # Token de acesso à conta do Twitter
-access_token_secret = '---'  # Token secreto de acesso à conta do Twitter
+consumer_key = '-'  # Chave de consumo da API do Twitter
+consumer_secret = '-'  # Chave secreta de consumo da API do Twitter
+access_token = '-'  # Token de acesso à conta do Twitter
+access_token_secret = '-'  # Token secreto de acesso à conta do Twitter
 
 # Criando um cliente tweepy.Client com as credenciais fornecidas
 client = tweepy.Client(
@@ -21,7 +21,7 @@ client = tweepy.Client(
 
 try:
     # Tentando criar um tweet com o texto especificado
-    client.create_tweet(text="Estou animado para a corrida de Fórmula 1 no Bahrein! 🏎️🔥 #F1 #BahreinGP")
+    client.create_tweet(text="Teste APS 2024")
     print("Tweet enviado com sucesso!")  # Exibindo uma mensagem de sucesso se o tweet for enviado com sucesso
 except tweepy.TweepError as e:
     # Se ocorrer um erro ao enviar o tweet, exibir uma mensagem de erro com o detalhe do erro

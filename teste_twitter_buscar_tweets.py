@@ -6,31 +6,25 @@ install()
 import tweepy
 
 # Substitua essas variáveis pelas suas próprias credenciais
-consumer_key = '---'  # Chave de consumo da API do Twitter
-consumer_secret = '---'  # Chave secreta de consumo da API do Twitter
-access_token = '---'  # Token de acesso à conta do Twitter
-access_token_secret = '---'  # Token secreto de acesso à conta do Twitter
+consumer_key = '-'  # Chave de consumo da API do Twitter
+consumer_secret = '-'  # Chave secreta de consumo da API do Twitter
+access_token = '-'  # Token de acesso à conta do Twitter
+access_token_secret = '-'  # Token secreto de acesso à conta do Twitter
 
-# Autenticando usando as credenciais fornecidas
+# Configure a autenticação
 auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
 auth.set_access_token(access_token, access_token_secret)
 
-# Criando um objeto da API tweepy usando a autenticação
+# Crie o objeto da API
 api = tweepy.API(auth)
 
-try:
-    # Tentando obter os últimos 10 tweets do usuário '@MercedesAMGF1BR'
-    tweets = api.user_timeline(screen_name='@MercedesAMGF1BR', count=10)
+# Nome de usuário da conta do Twitter
+username = 'MercedesAMGF1BR'
 
-    # Iterando sobre os tweets e imprimindo seus textos
+# Obtenha os últimos tweets
+try:
+    tweets = api.user_timeline(screen_name=username, count=4)
     for tweet in tweets:
         print(tweet.text)
 except tweepy.TweepError as e:
-    # Se ocorrer um erro ao buscar os tweets, exibir uma mensagem de erro com o detalhe do erro
-    print(f"Erro ao buscar tweets do usuário: {e}")
-
-"""
-É necessário criar um novo app na página de developer do twitter e a partir dos códigos do novo app, essa aplicação talvez possa rodar.
-(Talvez) o app para essa aplicação de coletar os textos das postagens tenha que ser diferente do app que faz posts no perfil do twitter (teste_twitter.py)
-Hoje, 02/03, cheguei ao limite de criação de app (3) por dia por usuário.
-"""
+    print(f'Erro ao acessar a API do Twitter: {e.response.status_code}')
