@@ -6,7 +6,7 @@ install()
 import tweepy
 
 # Substitua essas variáveis pelas suas próprias credenciais
-consumer_key = '-'  # Chave de consumo da API do Twitter
+consumer_key = 'entre com a sua chave de api versão basic ou pro aqui'  # Chave de consumo da API do Twitter
 consumer_secret = '-'  # Chave secreta de consumo da API do Twitter
 access_token = '-'  # Token de acesso à conta do Twitter
 access_token_secret = '-'  # Token secreto de acesso à conta do Twitter
