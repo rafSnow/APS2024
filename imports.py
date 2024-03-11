@@ -56,6 +56,3 @@ import warnings
 # Suprimindo avisos para melhorar a legibilidade do código
 if not sys.warnoptions:
     warnings.simplefilter("ignore")
-
-print('Oi, tudo bem?')
-print('Tudo ótimo e contigo?')
