@@ -56,3 +56,11 @@ import warnings
 # Suprimindo avisos para melhorar a legibilidade do código
 if not sys.warnoptions:
     warnings.simplefilter("ignore")
+
+
+numeros = [1, 2, 3, 4, 5]
+
+for i in numeros:
+    print (i)
+
+print('Fim do print')
