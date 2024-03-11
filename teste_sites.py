@@ -1,6 +1,7 @@
 # Importação das bibliotecas necessárias
 import feedparser  # Para análise de feeds RSS
 import requests  # Para fazer solicitações HTTP
+
 from sumy.parsers.html import HtmlParser  # Para analisar o HTML de uma página
 from sumy.nlp.tokenizers import Tokenizer  # Para tokenização do texto
 from sumy.summarizers.lex_rank import LexRankSummarizer  # Para sumarização de texto
