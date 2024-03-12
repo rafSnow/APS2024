@@ -11,7 +11,7 @@ import openai
 nltk.download('stopwords')
 
 # Defina sua chave da API do OpenAI
-openai.api_key = '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'
+openai.api_key = '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'
 
 # Função para obter o conteúdo HTML de um link
 def get_html_content(url):
@@ -98,11 +98,12 @@ environment_words = [word for word in filtered_words if word in environment_rela
 word_freq = nltk.FreqDist(environment_words)
 
 # Obtém as palavras mais comuns e suas frequências
-top_words = word_freq.most_common(40)
+top_words = word_freq.most_common(15)
 top_words, frequencies = zip(*top_words)
 
+
 # Plota o gráfico de barras das palavras mais comuns relacionadas ao meio ambiente
-plt.figure(figsize=(20, 6))
+plt.figure(figsize=(10, 6))
 plt.bar(top_words, frequencies, color='green')
 plt.xlabel('Palavras relacionadas ao Meio Ambiente')
 plt.ylabel('Frequência\nx vezes')
@@ -111,29 +112,38 @@ plt.xticks(rotation=45, ha='right')
 plt.tight_layout()
 plt.show()
 
+print("top_words:", top_words)
+print("frequencies:", frequencies)
+
 # Agora vamos gerar o resumo usando o GPT
 # Convertendo as palavras em formato de dicionário para facilitar o envio para o GPT
 word_dict = dict(zip(top_words, frequencies))
 
 # Construa o texto para o prompt do GPT
-prompt_text = "Sabendo que a frequência das palavras é esta:\n"
+prompt_text = "Analise a frequência das palavras nas últimas notícias do meio ambiente.\n"
+
+prompt_text += "Palavras e suas frequências:\n"
 for word, freq in word_dict.items():
     prompt_text += f"- {word}: {freq} vezes\n"
 
-prompt_text += "\nO que você pode tirar de conclusão a respeito?"
+prompt_text += "O que você pode concluir a respeito?"
+
+print("Texto para GPT:\n", prompt_text)
 
 # Enviando o texto para o GPT para gerar o relatório
 response = openai.ChatCompletion.create(
-    model = "gpt-3.5-turbo",
-    messages = [
-        {"role": "system", "content": "Você é um assistente muito proativo!"},
+    model = "gpt-3.5-turbo",  # Tentar um modelo diferente
+    messages=[
         {"role": "user", "content": prompt_text},
     ],
-    temperature = 1,
-    max_tokens = 150
+    temperature=0.7,  # Reduzir a temperatura
+    max_tokens=700  # Limitar o número máximo de tokens
 )
 
-summary = response.choices[0].text.strip()
+summary = "No output from the model"
+
+if response and response.choices and len(response.choices) > 0:
+    summary = response.choices[0].message['content'].strip()
 
 print("Relatório das palavras mais comuns relacionadas ao Meio Ambiente nas notícias:")
 print(summary)
