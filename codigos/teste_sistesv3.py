@@ -1,38 +1,44 @@
-import feedparser  # Biblioteca para analisar feeds RSS
-import requests  # Biblioteca para fazer solicitações HTTP
-import matplotlib.pyplot as plt  # Biblioteca para criar visualizações de dados
-from bs4 import BeautifulSoup  # Biblioteca para analisar conteúdo HTML
-import nltk  # Biblioteca para processamento de linguagem natural
-from nltk.corpus import stopwords  # Lista de stopwords em português
-from nltk.tokenize import word_tokenize  # Função para tokenizar texto
-nltk.download('stopwords')  # Baixa as stopwords em português, se ainda não tiver sido feito
+import feedparser
+import requests
+import matplotlib.pyplot as plt
+from bs4 import BeautifulSoup
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+import openai
+
+# Baixe as stopwords em português, se ainda não tiver sido feito
+nltk.download('stopwords')
+
+# Defina sua chave da API do OpenAI
+openai.api_key = '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'
 
 # Função para obter o conteúdo HTML de um link
 def get_html_content(url):
     try:
-        response = requests.get(url)  # Faz uma solicitação HTTP para obter o conteúdo HTML da URL
-        response.raise_for_status()  # Lança uma exceção se a solicitação falhar
-        return response.text  # Retorna o conteúdo HTML da página
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.text
     except requests.RequestException as e:
         print(f"Erro ao obter o conteúdo HTML do URL {url}: {e}")
         return None
 
 # Função para coletar todas as palavras de um texto
 def collect_words(text):
-    words = word_tokenize(text)  # Tokeniza o texto em palavras
-    words = [word.lower() for word in words if word.isalnum()]  # Converte as palavras para minúsculas e remove pontuações
-    return words  # Retorna a lista de palavras
+    words = word_tokenize(text)
+    words = [word.lower() for word in words if word.isalnum()]
+    return words
 
 # Função para imprimir as principais notícias de um feed RSS
 def print_top_news_rss(site_name, url, max_news=10):
     try:
-        feed = feedparser.parse(url)  # Analisa o feed RSS
+        feed = feedparser.parse(url)
         print(f"Principais notícias de {site_name}:")
         print("=" * 50)
         for i, entry in enumerate(feed.entries[:max_news]):
             print(f"Notícia {i + 1}:")
-            print(entry.title)  # Imprime o título da notícia
-            print(entry.link)  # Imprime o link da notícia
+            print(entry.title)
+            print(entry.link)
             print("-" * 50)
     except Exception as e:
         print(f"Erro ao processar o feed RSS {url}: {e}")
@@ -74,18 +80,18 @@ environment_related_words = [
 # Coleta todas as palavras das notícias
 all_words = []
 for site, rss_feed in rss_feeds.items():
-    feed = feedparser.parse(rss_feed)  # Analisa o feed RSS
+    feed = feedparser.parse(rss_feed)
     for entry in feed.entries:
-        html_content = get_html_content(entry.link)  # Obtém o conteúdo HTML da página
+        html_content = get_html_content(entry.link)
         if html_content:
-            soup = BeautifulSoup(html_content, 'html.parser')  # Analisa o HTML da página
-            text = soup.get_text()  # Obtém o texto da página
-            words = collect_words(text)  # Coleta as palavras do texto
-            all_words.extend(words)  # Adiciona as palavras à lista de todas as palavras
+            soup = BeautifulSoup(html_content, 'html.parser')
+            text = soup.get_text()
+            words = collect_words(text)
+            all_words.extend(words)
 
-# Remove stopwords (palavras comuns que não contribuem significativamente para o significado)
-stop_words = set(stopwords.words('portuguese'))  # Obtém as stopwords em português
-filtered_words = [word for word in all_words if word not in stop_words]  # Remove as stopwords das palavras coletadas
+# Remove stopwords
+stop_words = set(stopwords.words('portuguese'))
+filtered_words = [word for word in all_words if word not in stop_words]
 
 # Identifica e conta as palavras relacionadas ao meio ambiente
 environment_words = [word for word in filtered_words if word in environment_related_words]
@@ -93,14 +99,41 @@ word_freq = nltk.FreqDist(environment_words)
 
 # Obtém as palavras mais comuns e suas frequências
 top_words = word_freq.most_common(40)
-top_words, frequencies = zip(*top_words)  # Separa as palavras e frequências em duas listas
+top_words, frequencies = zip(*top_words)
 
 # Plota o gráfico de barras das palavras mais comuns relacionadas ao meio ambiente
-plt.figure(figsize=(20, 6))  # Define o tamanho da figura do gráfico
-plt.bar(top_words, frequencies, color='green')  # Plota o gráfico de barras com as palavras e frequências
-plt.xlabel('Palavras relacionadas ao Meio Ambiente')  # Adiciona um rótulo ao eixo x
-plt.ylabel('Frequência\nx vezes')  # Adiciona um rótulo ao eixo y
-plt.title('Frequência das palavras relacionadas ao Meio Ambiente nas notícias')  # Adiciona um título ao gráfico
-plt.xticks(rotation=45, ha='right')  # Rotaciona os rótulos do eixo x para facilitar a leitura
-plt.tight_layout()  # Ajusta o layout do gráfico para evitar sobreposições
-plt.show()  # Exibe o gráfico de barras
+plt.figure(figsize=(20, 6))
+plt.bar(top_words, frequencies, color='green')
+plt.xlabel('Palavras relacionadas ao Meio Ambiente')
+plt.ylabel('Frequência\nx vezes')
+plt.title('Frequência das palavras relacionadas ao Meio Ambiente nas notícias')
+plt.xticks(rotation=45, ha='right')
+plt.tight_layout()
+plt.show()
+
+# Agora vamos gerar o resumo usando o GPT
+# Convertendo as palavras em formato de dicionário para facilitar o envio para o GPT
+word_dict = dict(zip(top_words, frequencies))
+
+# Construa o texto para o prompt do GPT
+prompt_text = "Sabendo que a frequência das palavras é esta:\n"
+for word, freq in word_dict.items():
+    prompt_text += f"- {word}: {freq} vezes\n"
+
+prompt_text += "\nO que você pode tirar de conclusão a respeito?"
+
+# Enviando o texto para o GPT para gerar o relatório
+response = openai.ChatCompletion.create(
+    model = "gpt-3.5-turbo",
+    messages = [
+        {"role": "system", "content": "Você é um assistente muito proativo!"},
+        {"role": "user", "content": prompt_text},
+    ],
+    temperature = 1,
+    max_tokens = 150
+)
+
+summary = response.choices[0].text.strip()
+
+print("Relatório das palavras mais comuns relacionadas ao Meio Ambiente nas notícias:")
+print(summary)
