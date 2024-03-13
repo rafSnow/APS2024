@@ -1,17 +1,21 @@
-import feedparser
-import requests
-import matplotlib.pyplot as plt
-from bs4 import BeautifulSoup
-import nltk
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
-import openai
+import feedparser  # Para analisar feeds RSS
+import requests  # Para fazer solicitações HTTP
+import matplotlib.pyplot as plt  # Para plotar gráficos
+from bs4 import BeautifulSoup  # Para analisar HTML
+import nltk  # Para processamento de linguagem natural
+from nltk.corpus import stopwords  # Lista de palavras irrelevantes
+from nltk.tokenize import word_tokenize  # Para tokenizar texto
+import openai  # Para uso da API OpenAI
+
+from sumy.parsers.html import HtmlParser  # Para analisar o HTML de uma página
+from sumy.nlp.tokenizers import Tokenizer  # Para tokenização do texto
+from sumy.summarizers.lex_rank import LexRankSummarizer  # Para sumarização de texto
 
 # Baixe as stopwords em português, se ainda não tiver sido feito
 nltk.download('stopwords')
 
 # Defina sua chave da API do OpenAI
-openai.api_key = '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'
+openai.api_key = '----'
 
 # Função para obter o conteúdo HTML de um link
 def get_html_content(url):
@@ -29,19 +33,35 @@ def collect_words(text):
     words = [word.lower() for word in words if word.isalnum()]
     return words
 
-# Função para imprimir as principais notícias de um feed RSS
-def print_top_news_rss(site_name, url, max_news=10):
-    try:
-        feed = feedparser.parse(url)
-        print(f"Principais notícias de {site_name}:")
-        print("=" * 50)
-        for i, entry in enumerate(feed.entries[:max_news]):
-            print(f"Notícia {i + 1}:")
-            print(entry.title)
-            print(entry.link)
-            print("-" * 50)
-    except Exception as e:
-        print(f"Erro ao processar o feed RSS {url}: {e}")
+titles_list = []  # Lista para armazenar os títulos das notícias
+
+# Função para imprimir as principais notícias de um feed RSS com resumo
+def print_top_news_rss_with_summary(site_name, url, max_news=5):
+    global titles_list  # Usando a lista global dentro da função
+    
+    # Analisa o feed RSS
+    feed = feedparser.parse(url)
+    
+    # Imprime cabeçalho
+    print(f"Principais notícias de {site_name}:")
+    print("="*50)
+    
+    # Itera pelas entradas do feed (notícias)
+    for i, entry in enumerate(feed.entries[:max_news]):
+        print(f"Notícia {i+1}:")
+        print(entry.title,'.')  # Imprime o título da notícia
+        titles_list.append(entry.title)  # Adiciona o título à lista
+        print("\nResumo:")
+        summary = get_summary(entry.link)  # Obtém o resumo da notícia
+        print(summary)  # Imprime o resumo
+        print("-"*50)
+
+# Função para obter o resumo do conteúdo de um link
+def get_summary(url):
+    parser = HtmlParser.from_url(url, Tokenizer("portuguese"))  # Parseia o HTML da página
+    summarizer = LexRankSummarizer()  # Inicializa o sumarizador
+    summary = summarizer(parser.document, sentences_count=3)  # Obtém um resumo do conteúdo
+    return ' '.join([str(sentence) for sentence in summary])  # Retorna o resumo como uma string
 
 # Lista de feeds RSS dos sites que serão buscadas as notícias
 rss_feeds = {
@@ -50,6 +70,11 @@ rss_feeds = {
     "Instituto Akatu": "https://www.akatu.org.br/feed/",
     "O Eco": "https://www.oeco.org.br/feed/",
 }
+
+# Itera sobre a lista de feeds RSS e imprime as principais notícias de cada um com resumo
+for site, rss_feed in rss_feeds.items():
+    print_top_news_rss_with_summary(site, rss_feed)  # Chama a função para imprimir as notícias com resumo de cada feed
+    print("\n")  # Imprime uma linha em branco entre os resultados
 
 # Lista de palavras relacionadas ao meio ambiente que queremos buscar
 environment_related_words = [
@@ -98,9 +123,8 @@ environment_words = [word for word in filtered_words if word in environment_rela
 word_freq = nltk.FreqDist(environment_words)
 
 # Obtém as palavras mais comuns e suas frequências
-top_words = word_freq.most_common(15)
+top_words = word_freq.most_common(10)
 top_words, frequencies = zip(*top_words)
-
 
 # Plota o gráfico de barras das palavras mais comuns relacionadas ao meio ambiente
 plt.figure(figsize=(10, 6))
@@ -112,21 +136,21 @@ plt.xticks(rotation=45, ha='right')
 plt.tight_layout()
 plt.show()
 
-print("top_words:", top_words)
-print("frequencies:", frequencies)
-
-# Agora vamos gerar o resumo usando o GPT
 # Convertendo as palavras em formato de dicionário para facilitar o envio para o GPT
 word_dict = dict(zip(top_words, frequencies))
 
-# Construa o texto para o prompt do GPT
-prompt_text = "Analise a frequência das palavras nas últimas notícias do meio ambiente.\n"
+# Convertendo a lista de títulos em uma única string
+titles_string = '\n'.join(titles_list)
 
-prompt_text += "Palavras e suas frequências:\n"
+# Construa o texto para o prompt do GPT
+prompt_text = "Frequência das palavras nas últimas notícias do meio ambiente.\n"
+
 for word, freq in word_dict.items():
     prompt_text += f"- {word}: {freq} vezes\n"
 
-prompt_text += "O que você pode concluir a respeito?"
+prompt_text += "Títulos das notícias coletadas:\n"
+prompt_text += titles_string
+prompt_text += "\n\nO que você pode concluir a respeito? Quero uma análise detalhada, ampla, falando das notícias, números e também das implicações, tendências e possíveis ações a serem tomadas em relação ao tema."
 
 print("Texto para GPT:\n", prompt_text)
 
@@ -136,8 +160,8 @@ response = openai.ChatCompletion.create(
     messages=[
         {"role": "user", "content": prompt_text},
     ],
-    temperature=0.7,  # Reduzir a temperatura
-    max_tokens=700  # Limitar o número máximo de tokens
+    temperature=0.85,  # Controla a aleatoriedade da saída do modelo
+    max_tokens=1200  # Limita o comprimento da saída do modelo
 )
 
 summary = "No output from the model"
@@ -145,5 +169,12 @@ summary = "No output from the model"
 if response and response.choices and len(response.choices) > 0:
     summary = response.choices[0].message['content'].strip()
 
-print("Relatório das palavras mais comuns relacionadas ao Meio Ambiente nas notícias:")
-print(summary)
+print("\n\nRelatório das notícias relacionadas ao Meio Ambiente:")
+print('\n',summary)
+
+# # Imprimir a lista de palavras e suas frequências
+# prompt_text2 = ""  # Define a variável prompt_text2
+# prompt_text2 += "Palavras e suas frequências:\n"
+# for word, freq in word_dict.items():
+#     prompt_text2 += f"- {word}: {freq} vezes\n"
+# print(prompt_text2)
