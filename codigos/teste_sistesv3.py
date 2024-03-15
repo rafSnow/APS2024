@@ -15,7 +15,7 @@ from sumy.summarizers.lex_rank import LexRankSummarizer  # Para sumarização de
 nltk.download('stopwords')
 
 # Defina sua chave da API do OpenAI
-openai.api_key = '----'
+openai.api_key = '--'
 
 # Função para obter o conteúdo HTML de um link
 def get_html_content(url):
@@ -148,7 +148,7 @@ prompt_text = "Frequência das palavras nas últimas notícias do meio ambiente.
 for word, freq in word_dict.items():
     prompt_text += f"- {word}: {freq} vezes\n"
 
-prompt_text += "Títulos das notícias coletadas:\n"
+prompt_text += "\nTítulos das notícias coletadas:\n\n"
 prompt_text += titles_string
 prompt_text += "\n\nO que você pode concluir a respeito? Quero uma análise detalhada, ampla, falando das notícias, números e também das implicações, tendências e possíveis ações a serem tomadas em relação ao tema."
 
