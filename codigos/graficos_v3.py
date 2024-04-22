@@ -1,13 +1,13 @@
 import os
 import praw
 import pandas as pd
-from tensorflow.keras.models import load_model
-from tensorflow.keras.preprocessing.text import Tokenizer
-from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.models import load_model # type: ignore
+from tensorflow.keras.preprocessing.text import Tokenizer # type: ignore
+from tensorflow.keras.preprocessing.sequence import pad_sequences # type: ignore
 import pickle
-from datetime import datetime
-import seaborn as sns
+from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 # Carregar o modelo treinado e compilar ao mesmo tempo
 model_path = r"C:\Users\Computador\Documents\DOCUMENTOSDIVERSOS\DocumentosFaculdade\5Periodo\APS\DESENVOLVIMENTO\APS2024\modelos\modelo_rnn.h5"
@@ -19,15 +19,10 @@ with open(r"C:\Users\Computador\Documents\DOCUMENTOSDIVERSOS\DocumentosFaculdade
 
 # Função para classificar o sentimento de um texto
 def classify_sentiment(text, tokenizer, model):
-    # Tokenização e vetorização
     sequence = tokenizer.texts_to_sequences([text])
     padded_sequence = pad_sequences(sequence, maxlen=100)
-    # Prever o sentimento usando o modelo treinado
     prediction = model.predict(padded_sequence)[0][0]
-    if prediction >= 0.5:
-        return "Positivo"
-    else:
-        return "Negativo"
+    return "Positivo" if prediction >= 0.5 else "Negativo"
 
 # Configurar as credenciais para acessar a API do Reddit
 reddit = praw.Reddit(
@@ -47,6 +42,7 @@ for keyword in topics:
     # Contadores para postagens positivas e negativas
     positive_count = 0
     negative_count = 0
+    
     # Iterar sobre os posts do Reddit relacionados à palavra-chave
     for submission in reddit.subreddit("all").search(keyword, sort="hot", time_filter="day", limit=20):
         if submission.selftext.strip() != "" or submission.url.strip() != "":
@@ -61,61 +57,56 @@ for keyword in topics:
                 negative_count += 1
     # Calcular a porcentagem de notícias positivas e negativas
     total_count = positive_count + negative_count
-    positive_percentage = (positive_count / total_count) * \
-        100 if total_count > 0 else 0
-    negative_percentage = (negative_count / total_count) * \
-        100 if total_count > 0 else 0
-    # Obter a data atual
+    positive_percentage = (positive_count / total_count) * 100 if total_count > 0 else 0
+    negative_percentage = (negative_count / total_count) * 100 if total_count > 0 else 0
+    
+    
+     # Obter a data atual
     current_date = datetime.now().strftime("%Y-%m-%d")
+    
     # Armazenar os resultados na lista de dados
-    data.append(
-        [current_date, keyword, positive_percentage, negative_percentage])
+    data.append([current_date, keyword, positive_percentage, negative_percentage])
 
 # Criar um DataFrame com os dados
-df = pd.DataFrame(
-    data, columns=['Date', 'Keyword', 'Positive Percentage', 'Negative Percentage'])
+df = pd.DataFrame(data, columns=['Date', 'Keyword', 'Sentiment', 'Percentage'])
 
-# Define the absolute path to the CSV file
+# Define o caminho absoluto para o arquivo CSV
 csv_file_path = r"C:\Users\Computador\Documents\DOCUMENTOSDIVERSOS\DocumentosFaculdade\5Periodo\APS\DESENVOLVIMENTO\APS2024\data\reddit_sentiment_data.csv"
 
-# Check if the directory exists and, if not, create it
+# Verificar se o diretório existe e, caso contrário, criá-lo
 directory = os.path.dirname(csv_file_path)
 if not os.path.exists(directory):
     os.makedirs(directory)
 
-# Save the DataFrame to a CSV file
+# Salvar o DataFrame em um arquivo CSV
 df.to_csv(csv_file_path, index=False, mode='a', header=not os.path.isfile(csv_file_path))
 
 print("Dados salvos com sucesso no arquivo CSV.")
 
 # Ler o arquivo CSV
-df = pd.read_csv(
-    r"C:\Users\Computador\Documents\DOCUMENTOSDIVERSOS\DocumentosFaculdade\5Periodo\APS\DESENVOLVIMENTO\APS2024\data\reddit_sentiment_data.csv")
+df = pd.read_csv(csv_file_path)
 
 # Converter a coluna Date para o tipo datetime
 df['Date'] = pd.to_datetime(df['Date'])
 df.set_index('Date', inplace=True)
 
-# Criar uma figura e eixos para o gráfico
-fig, ax = plt.subplots(figsize=(10, 6))
+# Plot
+# Tamanho da figura
+plt.figure(figsize=(18, 30))
 
-# Plotar as velas verdes (positivas) para cada palavra-chave sem incluir o parâmetro label
-for keyword in df['Keyword'].unique():
-    subset = df[df['Keyword'] == keyword]
-    ax.bar(subset.index, subset['Positive Percentage'] / 100, color='green', width=0.5)
-# Plotar as velas vermelhas (negativas) para cada palavra-chave sem incluir o parâmetro label
-    ax.bar(subset.index, subset['Negative Percentage'] / 100, color='red', width=0.5, bottom=subset['Positive Percentage'] / 100)
+# Contador
+A = 0
 
-# Adicionar legendas e título
-ax.legend()
-ax.set_xlabel('Data')
-ax.set_ylabel('Porcentagem')
-ax.set_title('Porcentagens positivas e negativas com base nas palavras-chave')
+for i in df.columns.values[2:]:
+    A += 1
+    plt.subplot(5, 2, A)
+    ax = sns.barplot(data=df.fillna('NaN'), x='Date', y=i, hue='Keyword', palette='viridis', legend=False)
+    plt.title(i, fontsize=15)
+    for p in ax.patches:
+        ax.annotate(f'{p.get_height():.2f}%', (p.get_x() + p.get_width() / 2., p.get_height()), ha='center', va='center', xytext=(0, 10), textcoords='offset points', fontsize=12)
+    if A >= 7:
+        plt.xticks(rotation=45)
 
-# Adicionar rótulos personalizados para os eixos x e y
-ax.set_xticklabels(df.index.strftime('%Y-%m-%d'), rotation=45)
-ax.set_yticklabels([f'{val}%' for val in range(0, 101, 10)])
-
-# Mostrar o gráfico
-plt.tight_layout()
+# Layout
+plt.tight_layout(h_pad=2)
 plt.show()
