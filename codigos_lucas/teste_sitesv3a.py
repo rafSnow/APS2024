@@ -202,10 +202,4 @@ if response and response.choices and len(response.choices) > 0:
 
 print("\n\nRelatório das notícias relacionadas ao Meio Ambiente:")
 print('\n', summary)
-
-
-<<<<<<< Updated upstream
 #comentário
-=======
-#coment
->>>>>>> Stashed changes
