@@ -7,22 +7,23 @@ import tensorflow as tf
 
 from sumy.parsers.html import HtmlParser
 from sumy.summarizers.lex_rank import LexRankSummarizer
-from tensorflow.keras.models import Sequential # type: ignore
-from tensorflow.keras.layers import Dense # type: ignore
+from tensorflow.keras.models import Sequential  # type: ignore
+from tensorflow.keras.layers import Dense  # type: ignore
 from bs4 import BeautifulSoup
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from sklearn.model_selection import train_test_split
-from tensorflow.keras.preprocessing.sequence import pad_sequences # type: ignore
-from tensorflow.keras.preprocessing.text import Tokenizer # type: ignore
+from tensorflow.keras.preprocessing.sequence import pad_sequences  # type: ignore
+from tensorflow.keras.preprocessing.text import Tokenizer  # type: ignore
 
 # Baixar as stopwords em português, se ainda não tiver sido feito
 nltk.download('stopwords')
 
 # Defina sua chave da API do OpenAI
-openai.api_key = '--'
+openai.api_key = 'sk-proj-4XybVdgW552NBSZxjFe4T3BlbkFJGnLdWjaxRIcgcXZoVu5p'
 
 # Função para obter o conteúdo HTML de um link
+
 def get_html_content(url):
     try:
         response = requests.get(url)
@@ -33,10 +34,13 @@ def get_html_content(url):
         return None
 
 # Função para coletar todas as palavras de um texto
+
+
 def collect_words(text):
     words = word_tokenize(text)
     words = [word.lower() for word in words if word.isalnum()]
     return words
+
 
 # Lista de feeds RSS dos sites que serão buscadas as notícias
 rss_feeds = {
@@ -76,6 +80,8 @@ environment_related_words = [
 titles_list = []
 
 # Função para imprimir as principais notícias de um feed RSS com resumo
+
+
 def print_top_news_rss_with_summary(site_name, url, max_news=5):
     global titles_list  # Usando a lista global dentro da função
 
@@ -97,6 +103,8 @@ def print_top_news_rss_with_summary(site_name, url, max_news=5):
         print("-"*50)
 
 # Função para obter o resumo do conteúdo de um link
+
+
 def get_summary(url):
     parser = HtmlParser.from_url(url, Tokenizer(
         "portuguese"))  # Parseia o HTML da página
@@ -105,6 +113,7 @@ def get_summary(url):
     summary = summarizer(parser.document, sentences_count=3)
     # Retorna o resumo como uma string
     return ' '.join([str(sentence) for sentence in summary])
+
 
 # Coleta todas as palavras das notícias
 all_words = []
@@ -133,7 +142,8 @@ top_words, frequencies = zip(*word_freq.most_common(10))
 # Dividir os dados em conjuntos de treinamento e teste
 words_array = np.array(top_words)
 frequencies_array = np.array(frequencies)
-X_train, X_test, y_train, y_test = train_test_split(words_array, frequencies_array, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(
+    words_array, frequencies_array, test_size=0.2, random_state=42)
 
 # Convert text data to numerical data
 tokenizer = Tokenizer(num_words=5000)
@@ -202,4 +212,4 @@ if response and response.choices and len(response.choices) > 0:
 
 print("\n\nRelatório das notícias relacionadas ao Meio Ambiente:")
 print('\n', summary)
-#comentário
+# comentário
