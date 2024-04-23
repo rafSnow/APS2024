@@ -20,7 +20,7 @@ from tensorflow.keras.preprocessing.text import Tokenizer # type: ignore
 nltk.download('stopwords')
 
 # Defina sua chave da API do OpenAI
-openai.api_key = 'sk-proj-4XybVdgW552NBSZxjFe4T3BlbkFJGnLdWjaxRIcgcXZoVu5p'
+openai.api_key = '--'
 
 # Função para obter o conteúdo HTML de um link
 def get_html_content(url):
