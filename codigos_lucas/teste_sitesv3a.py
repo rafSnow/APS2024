@@ -204,4 +204,8 @@ print("\n\nRelatório das notícias relacionadas ao Meio Ambiente:")
 print('\n', summary)
 
 
+<<<<<<< Updated upstream
 #comentário
+=======
+#coment
+>>>>>>> Stashed changes
