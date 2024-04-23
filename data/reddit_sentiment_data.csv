@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 Date,Keyword,Positive Percentage,Negative Percentage
 2024-03-13,deforestation,71.42857142857143,28.57142857142857
 2024-03-13,forestfires,0.0,0.0
@@ -44,3 +45,11 @@ Date,Keyword,Positive Percentage,Negative Percentage
 2024-04-18,floods,35.0,65.0
 2024-04-18,rain,30.0,70.0
 2024-04-18,riverpollution,0.0,0.0
+=======
+Date,Keyword,Sentiment,Percentage
+2024-04-17,deforestation,72.72727272727273,27.27272727272727
+2024-04-17,forestfires,0.0,0.0
+2024-04-17,floods,25.0,75.0
+2024-04-17,rain,20.0,80.0
+2024-04-17,riverpollution,0.0,0.0
+>>>>>>> Stashed changes
