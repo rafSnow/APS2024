@@ -35,12 +35,10 @@ def get_html_content(url):
 
 # Função para coletar todas as palavras de um texto
 
-
 def collect_words(text):
     words = word_tokenize(text)
     words = [word.lower() for word in words if word.isalnum()]
     return words
-
 
 # Lista de feeds RSS dos sites que serão buscadas as notícias
 rss_feeds = {
@@ -81,7 +79,6 @@ titles_list = []
 
 # Função para imprimir as principais notícias de um feed RSS com resumo
 
-
 def print_top_news_rss_with_summary(site_name, url, max_news=5):
     global titles_list  # Usando a lista global dentro da função
 
@@ -104,7 +101,6 @@ def print_top_news_rss_with_summary(site_name, url, max_news=5):
 
 # Função para obter o resumo do conteúdo de um link
 
-
 def get_summary(url):
     parser = HtmlParser.from_url(url, Tokenizer(
         "portuguese"))  # Parseia o HTML da página
@@ -113,7 +109,6 @@ def get_summary(url):
     summary = summarizer(parser.document, sentences_count=3)
     # Retorna o resumo como uma string
     return ' '.join([str(sentence) for sentence in summary])
-
 
 # Coleta todas as palavras das notícias
 all_words = []
@@ -212,4 +207,3 @@ if response and response.choices and len(response.choices) > 0:
 
 print("\n\nRelatório das notícias relacionadas ao Meio Ambiente:")
 print('\n', summary)
-# comentário
