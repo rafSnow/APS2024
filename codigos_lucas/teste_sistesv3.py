@@ -18,6 +18,8 @@ nltk.download('stopwords')
 openai.api_key = '--'
 
 # Função para obter o conteúdo HTML de um link
+
+
 def get_html_content(url):
     try:
         response = requests.get(url)
@@ -28,28 +30,33 @@ def get_html_content(url):
         return None
 
 # Função para coletar todas as palavras de um texto
+
+
 def collect_words(text):
     words = word_tokenize(text)
     words = [word.lower() for word in words if word.isalnum()]
     return words
 
+
 titles_list = []  # Lista para armazenar os títulos das notícias
 
 # Função para imprimir as principais notícias de um feed RSS com resumo
+
+
 def print_top_news_rss_with_summary(site_name, url, max_news=5):
     global titles_list  # Usando a lista global dentro da função
-    
+
     # Analisa o feed RSS
     feed = feedparser.parse(url)
-    
+
     # Imprime cabeçalho
     print(f"Principais notícias de {site_name}:")
     print("="*50)
-    
+
     # Itera pelas entradas do feed (notícias)
     for i, entry in enumerate(feed.entries[:max_news]):
         print(f"Notícia {i+1}:")
-        print(entry.title,'.')  # Imprime o título da notícia
+        print(entry.title, '.')  # Imprime o título da notícia
         titles_list.append(entry.title)  # Adiciona o título à lista
         print("\nResumo:")
         summary = get_summary(entry.link)  # Obtém o resumo da notícia
@@ -57,11 +64,17 @@ def print_top_news_rss_with_summary(site_name, url, max_news=5):
         print("-"*50)
 
 # Função para obter o resumo do conteúdo de um link
+
+
 def get_summary(url):
-    parser = HtmlParser.from_url(url, Tokenizer("portuguese"))  # Parseia o HTML da página
+    parser = HtmlParser.from_url(url, Tokenizer(
+        "portuguese"))  # Parseia o HTML da página
     summarizer = LexRankSummarizer()  # Inicializa o sumarizador
-    summary = summarizer(parser.document, sentences_count=3)  # Obtém um resumo do conteúdo
-    return ' '.join([str(sentence) for sentence in summary])  # Retorna o resumo como uma string
+    # Obtém um resumo do conteúdo
+    summary = summarizer(parser.document, sentences_count=3)
+    # Retorna o resumo como uma string
+    return ' '.join([str(sentence) for sentence in summary])
+
 
 # Lista de feeds RSS dos sites que serão buscadas as notícias
 rss_feeds = {
@@ -73,7 +86,8 @@ rss_feeds = {
 
 # Itera sobre a lista de feeds RSS e imprime as principais notícias de cada um com resumo
 for site, rss_feed in rss_feeds.items():
-    print_top_news_rss_with_summary(site, rss_feed)  # Chama a função para imprimir as notícias com resumo de cada feed
+    # Chama a função para imprimir as notícias com resumo de cada feed
+    print_top_news_rss_with_summary(site, rss_feed)
     print("\n")  # Imprime uma linha em branco entre os resultados
 
 # Lista de palavras relacionadas ao meio ambiente que queremos buscar
@@ -119,7 +133,8 @@ stop_words = set(stopwords.words('portuguese'))
 filtered_words = [word for word in all_words if word not in stop_words]
 
 # Identifica e conta as palavras relacionadas ao meio ambiente
-environment_words = [word for word in filtered_words if word in environment_related_words]
+environment_words = [
+    word for word in filtered_words if word in environment_related_words]
 word_freq = nltk.FreqDist(environment_words)
 
 # Obtém as palavras mais comuns e suas frequências
@@ -156,7 +171,7 @@ print("Texto para GPT:\n", prompt_text)
 
 # Enviando o texto para o GPT para gerar o relatório
 response = openai.ChatCompletion.create(
-    model = "gpt-3.5-turbo",  # Tentar um modelo diferente
+    model="gpt-3.5-turbo",  # Tentar um modelo diferente
     messages=[
         {"role": "user", "content": prompt_text},
     ],
@@ -170,7 +185,7 @@ if response and response.choices and len(response.choices) > 0:
     summary = response.choices[0].message['content'].strip()
 
 print("\n\nRelatório das notícias relacionadas ao Meio Ambiente:")
-print('\n',summary)
+print('\n', summary)
 
 # # Imprimir a lista de palavras e suas frequências
 # prompt_text2 = ""  # Define a variável prompt_text2

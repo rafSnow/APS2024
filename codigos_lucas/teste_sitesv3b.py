@@ -23,7 +23,6 @@ nltk.download('stopwords')
 openai.api_key = '---'
 
 # Função para obter o conteúdo HTML de um link
-
 def get_html_content(url):
     try:
         response = requests.get(url)
@@ -34,11 +33,34 @@ def get_html_content(url):
         return None
 
 # Função para coletar todas as palavras de um texto
-
 def collect_words(text):
     words = word_tokenize(text)
     words = [word.lower() for word in words if word.isalnum()]
     return words
+
+# Coleta todas as palavras das notícias
+def collect_all_words(rss_feeds):
+    all_words = []
+    for site, rss_feed in rss_feeds.items():
+        feed = feedparser.parse(rss_feed)
+        for entry in feed.entries:
+            html_content = get_html_content(entry.link)
+            if html_content:
+                soup = BeautifulSoup(html_content, 'html.parser')
+                text = soup.get_text()
+                words = collect_words(text)
+                all_words.extend(words)
+    return all_words
+
+
+# Lista para armazenar os títulos das notícias
+def get_titles_list(rss_feeds, max_news=5):
+    titles_list = []
+    for site, rss_feed in rss_feeds.items():
+        feed = feedparser.parse(rss_feed)
+        for i, entry in enumerate(feed.entries[:max_news]):
+            titles_list.append(entry.title)
+    return titles_list
 
 # Lista de feeds RSS dos sites que serão buscadas as notícias
 rss_feeds = {
@@ -99,8 +121,8 @@ def print_top_news_rss_with_summary(site_name, url, max_news=5):
         print(summary)  # Imprime o resumo
         print("-"*50)
 
-# Função para obter o resumo do conteúdo de um link
 
+# Função para obter o resumo do conteúdo de um link
 def get_summary(url):
     parser = HtmlParser.from_url(url, Tokenizer(
         "portuguese"))  # Parseia o HTML da página
@@ -110,28 +132,21 @@ def get_summary(url):
     # Retorna o resumo como uma string
     return ' '.join([str(sentence) for sentence in summary])
 
-# Coleta todas as palavras das notícias
-all_words = []
-for site, rss_feed in rss_feeds.items():
-    feed = feedparser.parse(rss_feed)
-    for entry in feed.entries:
-        html_content = get_html_content(entry.link)
-        if html_content:
-            soup = BeautifulSoup(html_content, 'html.parser')
-            text = soup.get_text()
-            words = collect_words(text)
-            all_words.extend(words)
+# Coletar todas as palavras das notícias
+all_words = collect_all_words(rss_feeds)
+
+# Define as stopwords em português
+stop_words = set(stopwords.words('portuguese'))
 
 # Remove stopwords
-stop_words = set(stopwords.words('portuguese'))
 filtered_words = [word for word in all_words if word not in stop_words]
 
-# Identifica e conta as palavras relacionadas ao meio ambiente
+# Identificar e contar as palavras relacionadas ao meio ambiente
 environment_words = [
     word for word in filtered_words if word in environment_related_words]
 word_freq = nltk.FreqDist(environment_words)
 
-# Obtém as palavras mais comuns e suas frequências
+# Obter as palavras mais comuns e suas frequências
 top_words, frequencies = zip(*word_freq.most_common(10))
 
 # Dividir os dados em conjuntos de treinamento e teste
