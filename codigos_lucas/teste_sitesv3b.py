@@ -4,6 +4,7 @@ import requests
 import nltk
 import numpy as np
 import tensorflow as tf
+import matplotlib.pyplot as plt
 
 from sumy.parsers.html import HtmlParser
 from sumy.summarizers.lex_rank import LexRankSummarizer
@@ -15,12 +16,19 @@ from nltk.tokenize import word_tokenize
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.preprocessing.sequence import pad_sequences  # type: ignore
 from tensorflow.keras.preprocessing.text import Tokenizer  # type: ignore
+from textblob import TextBlob # Essa biblioteca é usada para análise de sentimentos
+from sumy.nlp.tokenizers import Tokenizer
+from sumy.nlp.stemmers import Stemmer
+from sumy.utils import get_stop_words
+from sumy.summarizers.lex_rank import LexRankSummarizer as Summarizer
+from sumy.parsers.html import HtmlParser
+from sumy.nlp.tokenizers import Tokenizer
 
 # Baixar as stopwords em português, se ainda não tiver sido feito
 nltk.download('stopwords')
 
 # Defina sua chave da API do OpenAI
-openai.api_key = '---'
+openai.api_key = 'sk-proj-5IcC9TXPzAvNHMfdKOKoT3BlbkFJbHf3TWauF9oakd8TyYGR'
 
 # Função para obter o conteúdo HTML de um link
 def get_html_content(url):
@@ -38,29 +46,43 @@ def collect_words(text):
     words = [word.lower() for word in words if word.isalnum()]
     return words
 
-# Coleta todas as palavras das notícias
-def collect_all_words(rss_feeds):
-    all_words = []
-    for site, rss_feed in rss_feeds.items():
-        feed = feedparser.parse(rss_feed)
-        for entry in feed.entries:
-            html_content = get_html_content(entry.link)
-            if html_content:
-                soup = BeautifulSoup(html_content, 'html.parser')
-                text = soup.get_text()
-                words = collect_words(text)
-                all_words.extend(words)
-    return all_words
+titles_list = []  # Lista para armazenar os títulos das notícias
 
+# Função para imprimir as principais notícias de um feed RSS com resumo
+def print_top_news_rss_with_summary(site_name, url, max_news=5):
+    global titles_list  # Usando a lista global dentro da função
 
-# Lista para armazenar os títulos das notícias
-def get_titles_list(rss_feeds, max_news=5):
-    titles_list = []
-    for site, rss_feed in rss_feeds.items():
-        feed = feedparser.parse(rss_feed)
-        for i, entry in enumerate(feed.entries[:max_news]):
-            titles_list.append(entry.title)
-    return titles_list
+    # Analisa o feed RSS
+    feed = feedparser.parse(url)
+
+    # Imprime cabeçalho
+    print(f"Principais notícias de {site_name}:")
+    print("="*50)
+
+    # Itera pelas entradas do feed (notícias)
+    for i, entry in enumerate(feed.entries[:max_news]):
+        print(f"Notícia {i+1}:")
+        print(entry.title, '.')  # Imprime o título da notícia
+        titles_list.append(entry.title)  # Adiciona o título à lista
+        print("\nResumo:")
+        summary = get_summary(entry.link)  # Obtém o resumo da notícia
+        print(summary)  # Imprime o resumo
+        print("-"*50)
+
+# Função para obter o resumo do conteúdo de um link
+def get_summary(url):
+    LANGUAGE = "portuguese"
+    SENTENCES_COUNT = 3
+
+    parser = HtmlParser.from_url(url, Tokenizer(LANGUAGE))
+    stemmer = Stemmer(LANGUAGE)
+
+    summarizer = Summarizer(stemmer)
+    summarizer.stop_words = get_stop_words(LANGUAGE)
+
+    summary = summarizer(parser.document, SENTENCES_COUNT)
+
+    return ' '.join([str(sentence) for sentence in summary])
 
 # Lista de feeds RSS dos sites que serão buscadas as notícias
 rss_feeds = {
@@ -69,6 +91,14 @@ rss_feeds = {
     "Instituto Akatu": "https://www.akatu.org.br/feed/",
     "O Eco": "https://www.oeco.org.br/feed/",
 }
+
+
+# Itera sobre a lista de feeds RSS e imprime as principais notícias de cada um com resumo
+for site, rss_feed in rss_feeds.items():
+    # Chama a função para imprimir as notícias com resumo de cada feed
+    print_top_news_rss_with_summary(site, rss_feed)
+    print("\n")  # Imprime uma linha em branco entre os resultados
+
 
 # Lista de palavras relacionadas ao meio ambiente que queremos buscar
 environment_related_words = [
@@ -96,44 +126,17 @@ environment_related_words = [
     "impacto", "alteração", "degradante", "emissão"
 ]
 
-# Lista para armazenar os títulos das notícias
-titles_list = []
-
-# Função para imprimir as principais notícias de um feed RSS com resumo
-
-def print_top_news_rss_with_summary(site_name, url, max_news=5):
-    global titles_list  # Usando a lista global dentro da função
-
-    # Analisa o feed RSS
-    feed = feedparser.parse(url)
-
-    # Imprime cabeçalho
-    print(f"Principais notícias de {site_name}:")
-    print("="*50)
-
-    # Itera pelas entradas do feed (notícias)
-    for i, entry in enumerate(feed.entries[:max_news]):
-        print(f"Notícia {i+1}:")
-        print(entry.title, '.')  # Imprime o título da notícia
-        titles_list.append(entry.title)  # Adiciona o título à lista
-        print("\nResumo:")
-        summary = get_summary(entry.link)  # Obtém o resumo da notícia
-        print(summary)  # Imprime o resumo
-        print("-"*50)
-
-
-# Função para obter o resumo do conteúdo de um link
-def get_summary(url):
-    parser = HtmlParser.from_url(url, Tokenizer(
-        "portuguese"))  # Parseia o HTML da página
-    summarizer = LexRankSummarizer()  # Inicializa o sumarizador
-    # Obtém um resumo do conteúdo
-    summary = summarizer(parser.document, sentences_count=3)
-    # Retorna o resumo como uma string
-    return ' '.join([str(sentence) for sentence in summary])
-
-# Coletar todas as palavras das notícias
-all_words = collect_all_words(rss_feeds)
+# Coleta todas as palavras das notícias
+all_words = []
+for site, rss_feed in rss_feeds.items():
+    feed = feedparser.parse(rss_feed)
+    for entry in feed.entries:
+        html_content = get_html_content(entry.link)
+        if html_content:
+            soup = BeautifulSoup(html_content, 'html.parser')
+            text = soup.get_text()
+            words = collect_words(text)
+            all_words.extend(words)
 
 # Define as stopwords em português
 stop_words = set(stopwords.words('portuguese'))
@@ -148,6 +151,23 @@ word_freq = nltk.FreqDist(environment_words)
 
 # Obter as palavras mais comuns e suas frequências
 top_words, frequencies = zip(*word_freq.most_common(10))
+
+# Definir dicionário de polaridades para as palavras
+polarities = {}
+for word in top_words:
+    blob = TextBlob(word)
+    polarity = blob.sentiment.polarity
+    if polarity > 0:
+        polarities[word] = 'Boa'
+    elif polarity < 0:
+        polarities[word] = 'Ruim'
+    else:
+        polarities[word] = 'Neutra'
+
+# Contagem das polaridades
+polarity_counts = {'Boa': 0, 'Ruim': 0, 'Neutra': 0}
+for polarity in polarities.values():
+    polarity_counts[polarity] += 1
 
 # Dividir os dados em conjuntos de treinamento e teste
 words_array = np.array(top_words)
@@ -186,17 +206,18 @@ print(f'Loss: {loss}, MAE: {mae}')
 
 predictions = model.predict(X_test)
 
+# Convertendo as palavras em formato de dicionário para facilitar o envio para o GPT
+word_dict = dict(zip(top_words, frequencies))
+
+# Convertendo a lista de títulos em uma única string
+titles_string = '\n'.join(titles_list)
+
 # Imprimir a lista de títulos e suas frequências
 prompt_text = ""  # Define a variável prompt_text
 prompt_text += "Palavras e suas frequências:\n"
 for word, freq in zip(top_words, frequencies):
     prompt_text += f"- {word}: {freq} vezes\n"
 
-# Convertendo as palavras em formato de dicionário para facilitar o envio para o GPT
-word_dict = dict(zip(top_words, frequencies))
-
-# Convertendo a lista de títulos em uma única string
-titles_string = '\n'.join(titles_list)
 
 # Adicionar os títulos ao prompt_text
 prompt_text += "\nTítulos das notícias coletadas:\n\n"
@@ -222,6 +243,30 @@ if response and response.choices and len(response.choices) > 0:
 
 print("\n\nRelatório das notícias relacionadas ao Meio Ambiente:")
 print('\n', summary)
+
+# Imprimir as polaridades das palavras
+print("\nPolaridades das Palavras:")
+for word, polarity in polarities.items():
+    print(f"{word}: {polarity}")
+
+# Gráfico de barras das palavras mais repetidas
+plt.figure(figsize=(10, 6))
+plt.bar(top_words, frequencies)
+plt.xlabel('Palavras')
+plt.ylabel('Frequência')
+plt.title('Palavras Mais Repetidas Relacionadas ao Meio Ambiente')
+plt.xticks(rotation=45, ha='right')
+plt.tight_layout()
+plt.show()
+
+# Gráfico de barras horizontais da análise de sentimento das palavras
+plt.figure(figsize=(8, 6))
+plt.barh(list(polarity_counts.keys()), list(polarity_counts.values()), color=['green', 'red', 'gray'])
+plt.xlabel('Contagem')
+plt.ylabel('Sentimento')
+plt.title('Distribuição da Análise de Sentimento das Palavras')
+plt.grid(axis='x')
+plt.show()
 
 
 """

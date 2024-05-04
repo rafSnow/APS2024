@@ -15,11 +15,9 @@ from sumy.summarizers.lex_rank import LexRankSummarizer  # Para sumarização de
 nltk.download('stopwords')
 
 # Defina sua chave da API do OpenAI
-openai.api_key = '--'
+openai.api_key = 'sk-proj-5IcC9TXPzAvNHMfdKOKoT3BlbkFJbHf3TWauF9oakd8TyYGR'
 
 # Função para obter o conteúdo HTML de um link
-
-
 def get_html_content(url):
     try:
         response = requests.get(url)
@@ -30,8 +28,6 @@ def get_html_content(url):
         return None
 
 # Função para coletar todas as palavras de um texto
-
-
 def collect_words(text):
     words = word_tokenize(text)
     words = [word.lower() for word in words if word.isalnum()]
@@ -64,7 +60,6 @@ def print_top_news_rss_with_summary(site_name, url, max_news=5):
         print("-"*50)
 
 # Função para obter o resumo do conteúdo de um link
-
 
 def get_summary(url):
     parser = HtmlParser.from_url(url, Tokenizer(
@@ -159,7 +154,6 @@ titles_string = '\n'.join(titles_list)
 
 # Construa o texto para o prompt do GPT
 prompt_text = "Frequência das palavras nas últimas notícias do meio ambiente.\n"
-
 for word, freq in word_dict.items():
     prompt_text += f"- {word}: {freq} vezes\n"
 
