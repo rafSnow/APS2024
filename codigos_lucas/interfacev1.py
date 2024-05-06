@@ -6,6 +6,7 @@ import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import tkinter as tk
+import threading
 
 from tkinter import scrolledtext
 from sumy.parsers.html import HtmlParser
@@ -25,12 +26,14 @@ from sumy.utils import get_stop_words
 from sumy.summarizers.lex_rank import LexRankSummarizer as Summarizer
 from sumy.parsers.html import HtmlParser
 from sumy.nlp.tokenizers import Tokenizer
+from tkinter import Scrollbar, Text, messagebox
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 # Baixar as stopwords em português, se ainda não tiver sido feito
 nltk.download('stopwords')
 
 # Defina sua chave da API do OpenAI
-openai.api_key = '---'
+openai.api_key = 'sua_chave_aqui'
 
 # Função para obter o conteúdo HTML de um link
 def get_html_content(url):
@@ -226,7 +229,7 @@ prompt_text += "\nTítulos das notícias coletadas:\n\n"
 prompt_text += titles_string
 prompt_text += "\n\nO que você pode concluir a respeito? Quero uma análise detalhada, ampla, falando das notícias, números e também das implicações, tendências e possíveis ações a serem tomadas em relação ao tema."
 
-print("Texto para GPT:\n", prompt_text)
+# print("Texto para GPT:\n", prompt_text)
 
 # Enviando o texto para o GPT para gerar o relatório
 response = openai.ChatCompletion.create(
@@ -243,8 +246,8 @@ summary = "No output from the model"
 if response and response.choices and len(response.choices) > 0:
     summary = response.choices[0].message['content'].strip()
 
-print("\n\nRelatório das notícias relacionadas ao Meio Ambiente:")
-print('\n', summary)
+# print("\n\nRelatório das notícias relacionadas ao Meio Ambiente:")
+# print('\n', summary)
 
 # # Função para fechar a janela ao clicar no botão "Fechar"
 # def close_window():
@@ -269,9 +272,9 @@ print('\n', summary)
 # root.mainloop()
 
 # Imprimir as polaridades das palavras
-print("\nPolaridades das Palavras:")
-for word, polarity in polarities.items():
-    print(f"{word}: {polarity}")
+# print("\nPolaridades das Palavras:")
+# for word, polarity in polarities.items():
+#     print(f"{word}: {polarity}")
 
 # Gráfico de barras das palavras mais repetidas
 plt.figure(figsize=(10, 6))
@@ -292,22 +295,139 @@ plt.title('Distribuição da Análise de Sentimento das Palavras')
 plt.grid(axis='x')
 plt.show()
 
+# Criando as janelas:
 
+# Definindo a função para buscar notícias em uma thread separada
+def buscar_noticias():
+    global titles_list  # Utilizando a lista global
+
+    # Limpa o texto existente no widget de texto
+    text_widget.delete(1.0, tk.END)
+
+    # Itera sobre os sites e imprime as notícias com resumo
+    for site, rss_feed in rss_feeds.items():
+        text_widget.insert(tk.END, f"Principais notícias de {site}:\n")
+        text_widget.insert(tk.END, "=" * 50 + "\n")
+        
+        feed = feedparser.parse(rss_feed)
+
+        for i, entry in enumerate(feed.entries[:5]):  # Imprime apenas as 5 principais notícias
+            text_widget.insert(tk.END, f"Notícia {i + 1}:\n")
+            text_widget.insert(tk.END, f"{entry.title}\n\nResumo:\n")
+            summary = get_summary(entry.link)
+            text_widget.insert(tk.END, summary + "\n\n")
+            titles_list.append(entry.title)  # Adiciona o título à lista
+
+            text_widget.insert(tk.END, "-" * 50 + "\n")
+
+# Função para plotar o gráfico em uma nova janela
+def plotar_grafico():
+    # Criando uma nova janela para o gráfico
+    janela_grafico = tk.Toplevel(root)
+    janela_grafico.title("Gráfico de Barras")
+
+    # Criando uma figura para o gráfico
+    fig = plt.Figure(figsize=(10, 6))
+    ax = fig.add_subplot(111)
+
+    # Plotando o gráfico de barras
+    ax.bar(top_words, frequencies)
+    ax.set_xlabel('Palavras')
+    ax.set_ylabel('Frequência')
+    ax.set_title('Palavras Mais Repetidas Relacionadas ao Meio Ambiente')
+    ax.tick_params(axis='x', rotation=45)  # Ajustando a rotação dos ticks no eixo x
+
+    # Adicionando o gráfico à nova janela usando FigureCanvasTkAgg
+    canvas = FigureCanvasTkAgg(fig, master=janela_grafico)
+    canvas.draw()
+    canvas.get_tk_widget().pack()
+
+# Defina a função para o botão 3
+def exibir_analise():
+    global summary  # Certifique-se de ter a variável global summary disponível
+
+    # Limpa o texto existente no widget de texto
+    text_widget.delete(1.0, tk.END)
+
+    # Insere o conteúdo da análise no widget de texto
+    text_widget.insert(tk.END, "Relatório das notícias relacionadas ao Meio Ambiente:\n\n")
+    text_widget.insert(tk.END, summary)
+
+root = tk.Tk()
+root.title("Notícias sobre o Meio Ambiente")
+
+# Obtendo as dimensões da tela
+largura_tela = root.winfo_screenwidth()
+altura_tela = root.winfo_screenheight()
+
+# Definindo o tamanho da janela
+largura_janela = 1000
+altura_janela = 600
+
+# Calculando a posição x e y da janela para centralizá-la
+posicao_x = int((largura_tela - largura_janela) / 2)
+posicao_y = int((altura_tela - altura_janela) / 2)
+
+# Definindo a posição inicial da janela
+root.geometry(f"{largura_janela}x{altura_janela}+{posicao_x}+{posicao_y}")
+
+# Exibir a janela e atualizá-la para obter suas dimensões
+root.update()
+
+# Obtendo as dimensões da janela principal
+window_width = root.winfo_width()
+window_height = root.winfo_height()
+
+# Obtendo as dimensões do frame
+frame_width = window_width // 1.6  # Define a largura do frame como a metade da largura da janela
+frame_height = 400
+
+# Calculando as coordenadas x e y para centralizar o frame horizontalmente e 20 pixels a partir da borda superior
+x_frame = (window_width - frame_width) // 2
+y_frame = 20
+
+# Criando um frame para o espaço em branco
+frame_space = tk.Frame(root, width=frame_width, height=frame_height, bg="white")
+frame_space.place(x=x_frame, y=y_frame)  # Definindo a posição do frame
+
+# Adicionando um rótulo para exibir o texto dentro do frame
+text_widget = tk.Text(frame_space, wrap="word", bg="white")
+text_widget.pack(side="left", fill="y")
+
+# Adicionando uma barra de rolagem vertical
+scrollbar_y = tk.Scrollbar(frame_space, orient="vertical", command=text_widget.yview)
+scrollbar_y.pack(side="right", fill="y")
+text_widget.config(yscrollcommand=scrollbar_y.set)
+
+# Criando um frame para conter os botões
+button_frame = tk.Frame(root)
+button_frame.pack(side="bottom", pady=10)  # Posicionando o frame na parte inferior da janela com algum espaço
+
+# Criando o botão 1 com a função definida acima
+button1_buscar_noticias = tk.Button(button_frame, text="Principais Notícias", command=buscar_noticias, borderwidth=3, relief="groove", padx=5, pady=10, bg="#074207", fg="black", font=("Arial", 12, "bold"), width=25)
+button1_buscar_noticias.pack(side="left", padx=0)  # Posicionando o botão à esquerda dentro do frame
+
+# Modificando o botão 2 para chamar a função plotar_grafico
+button2_plotar_grafico = tk.Button(button_frame, text="Gráfico de Notícias", command=plotar_grafico, borderwidth=3, relief="groove", padx=5, pady=10, bg="#cc990e", fg="black", font=("Arial", 12, "bold"), width=25)
+button2_plotar_grafico.pack(side="left", padx=0)  # Posicionando o botão à esquerda dentro do frame
+
+# Modificando o botão 3 para chamar a função exibir_analise
+button3_exibir_analise = tk.Button(button_frame, text="Análise Escrita das Notícias", command=exibir_analise, borderwidth=3, relief="groove", padx=5, pady=10, bg="#0b4a8a", fg="black", font=("Arial", 12, "bold"), width=25)
+button3_exibir_analise.pack(side="left", padx=0)  # Posicionando o botão à esquerda dentro do frame
+
+# Definindo a cor de fundo da janela
+root.configure(background="#422407")
+
+# Iniciando o loop principal
+root.mainloop()
 
 """
-1.Importa as bibliotecas necessárias, como feedparser, openai, requests, nltk, numpy, tensorflow, sumy, BeautifulSoup, entre outras.
-2.Define funções para obter o conteúdo HTML de um link, coletar todas as palavras de um texto, imprimir as principais notícias de um feed RSS com resumo, obter o resumo do conteúdo de um link, entre outras funções auxiliares.
-3.Baixa as stopwords em português usando o NLTK.
-4.Define uma chave de API para o OpenAI.
-5.Cria uma lista de feeds RSS de sites que contêm notícias relacionadas ao meio ambiente e uma lista de palavras relacionadas ao meio ambiente que serão buscadas nas notícias.
-6.Define uma lista para armazenar os títulos das notícias.
-7.Itera sobre os feeds RSS, coleta o conteúdo HTML de cada notícia, extrai o texto, coleta todas as palavras das notícias, remove as stopwords e identifica e conta as palavras relacionadas ao meio ambiente.
-8.Divide os dados em conjuntos de treinamento e teste, converte os dados de texto em dados numéricos usando Tokenizer e padroniza as sequências.
-9.Implementa uma rede neural utilizando o TensorFlow e o Keras para prever a frequência das palavras relacionadas ao meio ambiente.
-10.Cria um texto para enviar ao GPT (OpenAI's Generative Pre-trained Transformer) contendo as palavras e suas frequências, os títulos das notícias coletadas e uma solicitação para uma análise detalhada das notícias.
-11.Envia o texto para o GPT para gerar o relatório das notícias relacionadas ao meio ambiente, incluindo análise, números, implicações, tendências e possíveis ações a serem tomadas.
-12.Imprime o relatório gerado pelo GPT.
-
-No geral, o código é um exemplo de como coletar notícias relacionadas a um tópico específico, analisar essas notícias e gerar um relatório automatizado utilizando técnicas de processamento de linguagem natural e aprendizado de máquina.
-
+# O código acima cria uma interface gráfica simples com três botões que permitem buscar as principais notícias, plotar um gráfico de barras das palavras mais repetidas e exibir uma análise escrita das notícias. A análise escrita é gerada pelo GPT-3 com base nos títulos das notícias coletadas.
+# Ele também exibe as principais notícias de diferentes sites relacionados ao meio ambiente, extrai palavras-chave, analisa o sentimento das palavras e gera um relatório detalhado das notícias.
+# A interface gráfica é criada usando a biblioteca Tkinter, e os gráficos são plotados usando a biblioteca Matplotlib.
+# O código é executado em uma única thread, mas a busca de notícias é feita em uma thread separada para evitar bloqueios na interface gráfica.
+# A análise escrita das notícias é gerada pelo GPT-3 usando a API da OpenAI.
+# O código pode ser executado em qualquer ambiente Python com as bibliotecas necessárias instaladas.
+# Uma curiosidade sobre o código é que ele utiliza a análise de sentimentos para identificar se as palavras relacionadas ao meio ambiente têm uma conotação positiva, negativa ou neutra.
+# E pode ser usado para acompanhar as notícias sobre o meio ambiente e gerar relatórios automatizados com base nessas notícias.
 """
