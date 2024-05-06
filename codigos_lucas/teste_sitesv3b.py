@@ -30,7 +30,7 @@ from sumy.nlp.tokenizers import Tokenizer
 nltk.download('stopwords')
 
 # Defina sua chave da API do OpenAI
-openai.api_key = 'sk-proj-mlw12r7Kl8CdIK1RyvUVT3BlbkFJMOJwFQjmMOqHKC2rAv5r'
+openai.api_key = '---'
 
 # Função para obter o conteúdo HTML de um link
 def get_html_content(url):
