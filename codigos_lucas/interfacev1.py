@@ -1,33 +1,33 @@
-import feedparser
-import openai
-import requests
-import nltk
-import numpy as np
-import tensorflow as tf
-import matplotlib.pyplot as plt
-import tkinter as tk
-import threading
+import feedparser # Essa biblioteca é usada para analisar feeds RSS
+import openai # Essa biblioteca é usada para interagir com a API do GPT-3
+import requests # Essa biblioteca é usada para fazer solicitações HTTP
+import nltk # Essa biblioteca é usada para processamento de linguagem natural
+import numpy as np # Essa biblioteca é usada para cálculos numéricos
+import tensorflow as tf # Essa biblioteca é usada para criar modelos de aprendizado de máquina
+import matplotlib.pyplot as plt # Essa biblioteca é usada para plotar gráficos
+import tkinter as tk # Essa biblioteca é usada para criar interfaces gráficas
+import threading # Essa biblioteca é usada para executar tarefas em threads separadas
 
-from tkinter import scrolledtext
-from sumy.parsers.html import HtmlParser
-from sumy.summarizers.lex_rank import LexRankSummarizer
+from tkinter import scrolledtext # Essa biblioteca é usada para criar widgets de texto roláveis
+from sumy.parsers.html import HtmlParser # Essa biblioteca é usada para analisar conteúdo HTML
+from sumy.summarizers.lex_rank import LexRankSummarizer # Essa biblioteca é usada para resumir texto
 from tensorflow.keras.models import Sequential  # type: ignore
 from tensorflow.keras.layers import Dense  # type: ignore
-from bs4 import BeautifulSoup
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
-from sklearn.model_selection import train_test_split
+from bs4 import BeautifulSoup # Essa biblioteca é usada para analisar conteúdo HTML
+from nltk.corpus import stopwords # Essa biblioteca é usada para obter stopwords
+from nltk.tokenize import word_tokenize # Essa biblioteca é usada para tokenização de palavras
+from sklearn.model_selection import train_test_split # Essa biblioteca é usada para dividir os dados em conjuntos de treinamento e teste
 from tensorflow.keras.preprocessing.sequence import pad_sequences  # type: ignore
 from tensorflow.keras.preprocessing.text import Tokenizer as KerasTokenizer # type: ignore
 from textblob import TextBlob # Essa biblioteca é usada para análise de sentimentos
-from sumy.nlp.tokenizers import Tokenizer
-from sumy.nlp.stemmers import Stemmer
-from sumy.utils import get_stop_words
-from sumy.summarizers.lex_rank import LexRankSummarizer as Summarizer
-from sumy.parsers.html import HtmlParser
-from sumy.nlp.tokenizers import Tokenizer
-from tkinter import Scrollbar, Text, messagebox
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from sumy.nlp.tokenizers import Tokenizer # Essa biblioteca é usada para tokenização de texto
+from sumy.nlp.stemmers import Stemmer # Essa biblioteca é usada para stemização de palavras
+from sumy.utils import get_stop_words # Essa biblioteca é usada para obter stopwords
+from sumy.summarizers.lex_rank import LexRankSummarizer as Summarizer # Essa biblioteca é usada para resumir texto
+from sumy.parsers.html import HtmlParser # Essa biblioteca é usada para analisar conteúdo HTML
+from sumy.nlp.tokenizers import Tokenizer # Essa biblioteca é usada para tokenização de texto
+from tkinter import Scrollbar, Text, messagebox # Essa biblioteca é usada para criar widgets de texto roláveis e caixas de diálogo
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg # Essa biblioteca é usada para exibir gráficos em interfaces gráficas
 
 # Baixar as stopwords em português, se ainda não tiver sido feito
 nltk.download('stopwords')
@@ -106,7 +106,7 @@ for site, rss_feed in rss_feeds.items():
 
 
 # Lista de palavras relacionadas ao meio ambiente que queremos buscar
-environment_related_words = [
+environment_related_words = [ # Lista de palavras relacionadas ao meio ambiente
     "queimadas", "enchente", "poluição", "desmatamento", "biodiversidade", "sustentabilidade",
     "reciclagem", "desflorestamento", "aquecimento global", "preservação", "conservação",
     "impacto ambiental", "energia renovável", "carbono", "plástico", "floresta", "água",
