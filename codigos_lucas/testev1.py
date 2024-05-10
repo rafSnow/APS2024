@@ -8,6 +8,8 @@ import re
 import unicodedata
 import torch
 from transformers import AutoTokenizer, BertForSequenceClassification, BertTokenizer
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 # Configurar as credenciais para acessar a API do Reddit
 reddit = praw.Reddit(
@@ -19,10 +21,113 @@ reddit = praw.Reddit(
 # Carregar o modelo e o tokenizer pré-treinado
 model_name = 'neuralmind/bert-base-portuguese-cased'
 model = BertForSequenceClassification.from_pretrained(model_name, num_labels=2)
-model.load_state_dict(torch.load(r'C:\Users\Computador\Documents\DOCUMENTOSDIVERSOS\DocumentosFaculdade\5Periodo\APS\DESENVOLVIMENTO\APS2024\codigos\jupyter\model.bin'))
+model.load_state_dict(torch.load(r'C:\Users\rafael.nsouza\Documents\GitHub\JucaBiluca\codigos\jupyter\model.bin'))
 
-tokenizer = AutoTokenizer.from_pretrained(r'C:\Users\Computador\Documents\DOCUMENTOSDIVERSOS\DocumentosFaculdade\5Periodo\APS\DESENVOLVIMENTO\APS2024\codigos\jupyter\tokenizer_dir')
+tokenizer = AutoTokenizer.from_pretrained(r'C:\Users\rafael.nsouza\Documents\GitHub\JucaBiluca\codigos\jupyter\tokenizer_dir')
 
+def mostrar_dashboard():
+    def plot_bar_chart():
+        # Ler os dados do CSV
+        df = pd.read_csv(r"C:\Users\rafael.nsouza\Documents\GitHub\JucaBiluca\data\reddit_sentiment_data.csv")
+        
+        # Criar subplots para cada dia
+        fig, axs = plt.subplots(1, 2, figsize=(18, 8)) 
+
+        # Contador
+        A = 0
+        for i in df.columns.values[2:]:
+            A += 1
+            ax = axs[A - 1]  # Seleciona o subplot correspondente
+            sns.barplot(data=df.fillna('NaN'), x='Data', y=i, hue='Palavra-chave', palette='viridis', ax=ax)
+            ax.set_ylim(0, 121)  # Definir intervalo do eixo y para 0 a 100
+            ax.set_title(i, fontsize=15)
+            for p in ax.patches:
+                ax.annotate(f'{p.get_height():.2f}%', (p.get_x() + p.get_width() / 2., p.get_height()), ha='center', va='center', xytext=(0, 10), textcoords='offset points', fontsize=9, color='red')
+            if A >= 7:
+                ax.tick_params(axis='x', rotation=45)
+        # Ajustar a posição do gráfico para cima
+        plt.subplots_adjust(top=5)
+
+        # Adicionar o relatório
+        report_text = """
+        O gráfico na imagem mostra a porcentagem positiva e negativa associada a várias palavras-chave (desmatamento, incêndios, barragem, chuva e poluição) em diferentes datas.
+
+        Observações com base na descrição do Gráfico:
+        - Porcentagem Positiva: Este gráfico mostra a porcentagem de sentimentos positivos associados a cada palavra-chave em diferentes datas. As palavras-chave “chuva” e “Incêndios” têm as maiores porcentagens, indicando que elas são geralmente vistas de forma positiva nas discussões ou contextos analisados.
+        - Porcentagem Negativa: Este gráfico mostra a porcentagem de sentimentos negativos associados a cada palavra-chave em diferentes datas. “Poluição” e “Desmatamento” dominam com altas porcentagens, indicando que esses temas são geralmente vistos de forma negativa.
+        """
+
+        fig.text(0.5, -0.05, report_text, ha='center', fontsize=12, wrap=True)
+
+        # Layout
+        plt.tight_layout(h_pad=2)
+        plt.show()
+
+    def plot_line_chart():
+        # Código para plotar gráfico de linhas
+        pass
+
+    def plot_scatter_chart():
+        # Código para plotar gráfico de dispersão
+        pass
+
+    def plot_pie_chart():
+        # Código para plotar gráfico de pizza
+        pass
+
+    # Lista de tipos de gráficos
+    tipos_graficos = ["Gráfico de Barras", "Gráfico de Linhas", "Gráfico de Dispersão", "Gráfico de Pizza"]
+
+    # Criar uma janela secundária para os gráficos
+    dashboard_window = tk.Toplevel(root)
+    dashboard_window.title("Dashboard")
+
+    # Criar um frame para os botões de seleção de gráfico
+    frame_botoes = tk.Frame(dashboard_window)
+    frame_botoes.pack(pady=10)
+
+    # Criar os botões de seleção de gráfico
+    for tipo_grafico in tipos_graficos:
+        tk.Button(frame_botoes, text=tipo_grafico, command=lambda t=tipo_grafico: update_plot(t)).pack(side=tk.LEFT, padx=10)
+
+    # Frame para exibir o gráfico selecionado
+    frame_grafico = tk.Frame(dashboard_window)
+    frame_grafico.pack(expand=True, fill="both")
+
+    # Função para atualizar o frame do gráfico com base no tipo selecionado
+    def update_plot(tipo_grafico):
+        # Limpar o frame do gráfico
+        for widget in frame_grafico.winfo_children():
+            widget.destroy()
+
+        # Exibir o gráfico selecionado
+        if tipo_grafico == "Gráfico de Barras":
+            plot_bar_chart()
+        elif tipo_grafico == "Gráfico de Linhas":
+            plot_line_chart()
+        elif tipo_grafico == "Gráfico de Dispersão":
+            plot_scatter_chart()
+        elif tipo_grafico == "Gráfico de Pizza":
+            plot_pie_chart()
+
+    # Chamar a função update_plot para exibir o primeiro gráfico por padrão
+    update_plot(tipos_graficos[0])
+
+    # Criar uma janela secundária para os gráficos
+    dashboard_window = tk.Toplevel(root)
+    dashboard_window.title("Dashboard")
+
+    # Criar um frame para os botões de seleção de gráfico
+    frame_botoes = tk.Frame(dashboard_window)
+    frame_botoes.pack(pady=10)
+
+    # Botão para mostrar o gráfico de barras
+    tk.Button(frame_botoes, text="Gráfico de Barras", command=plot_bar_chart).pack(side=tk.LEFT, padx=10)
+
+    # Frame para exibir o gráfico selecionado
+    frame_grafico = tk.Frame(dashboard_window)
+    frame_grafico.pack(expand=True, fill="both")
+    
 # Função para limpar os dados
 def Limpeza_dados(texto):
     # Remover links
@@ -114,7 +219,7 @@ def obter_dados():
     df = pd.DataFrame(dataSentiment, columns=['Data', 'Palavra Chave', 'Porcentagem Positiva', 'Porcentagem Negativa'])
 
     # Salvar o DataFrame em um arquivo CSV
-    csv_file_path = r'C:\Users\Computador\Documents\DOCUMENTOSDIVERSOS\DocumentosFaculdade\5Periodo\APS\DESENVOLVIMENTO\APS2024\data\reddit_sentiment_data.csv'
+    csv_file_path = r'C:\Users\rafael.nsouza\Documents\GitHub\JucaBiluca\data\reddit1.csv'
 
     # Salvar o DataFrame em um arquivo CSV (modo append)
     df.to_csv(csv_file_path, index=False, mode='a', header=not os.path.isfile(csv_file_path))
@@ -200,6 +305,10 @@ frame_principal.pack(expand=True, fill="both")
 # Botão para mostrar a tabela
 botao_mostrar_tabela = tk.Button(frame_principal, text="Mostrar Tabela", command=mostrar_tabela)
 botao_mostrar_tabela.pack(pady=10)
+
+# Botão para mostrar o dashboard
+botao_mostrar_dashboard = tk.Button(frame_principal, text="Mostrar Dashboard", command=mostrar_dashboard)
+botao_mostrar_dashboard.pack(pady=10)
 
 # Botão para sair do programa
 botao_sair = tk.Button(root, text="Sair", command=root.quit)

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultados da Busca no Reddit</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>Resultados da Busca no Reddit</h1>
+    <table id="redditResults">
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Palavra-Chave</th>
+                <th>% Positiva</th>
+                <th>% Negativa</th>
+                <th>Método</th>
+                <th>Cliente IP</th>
+            </tr>
+        </thead>
+        <tbody id="redditResultsBody">
+        </tbody>
+    </table>
+
+    <script>
+        function getRedditResults() {
+            fetch('/reddit')
+                .then(response => response.json())
+                .then(data => {
+                    const redditResultsBody = document.getElementById('redditResultsBody');
+                    redditResultsBody.innerHTML = '';
+                    data.data.forEach(result => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${result[0]}</td>
+                            <td>${result[1]}</td>
+                            <td>${result[2]}</td>
+                            <td>${result[3]}</td>
+                            <td>${result[4]}</td>
+                            <td>${result[5]}</td>
+                        `;
+                        redditResultsBody.appendChild(row);
+                    });
+                })
+                .catch(error => console.error('Erro ao obter resultados do Reddit:', error));
+        }
+
+        // Chama a função ao carregar a página para exibir os resultados automaticamente
+        window.onload = getRedditResults;
+    </script>
+</body>
+</html>

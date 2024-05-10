@@ -13,8 +13,9 @@ import os # Essa biblioteca é usada para interagir com o sistema operacional
 import re # Essa biblioteca é usada para expressões regulares
 import unicodedata # Essa biblioteca é usada para normalizar caracteres Unicode
 import torch # Essa biblioteca é usada para criar modelos de aprendizado de máquina
+import subprocess
 
-from transformers import AutoTokenizer, BertForSequenceClassification, BertTokenizer # Essa biblioteca é usada para trabalhar com modelos de linguagem
+
 from datetime import datetime # Essa biblioteca é usada para manipular datas e horas
 from tkinter import ttk # Essa biblioteca é usada para criar widgets de interface gráfica
 from tkinter import scrolledtext # Essa biblioteca é usada para criar widgets de texto roláveis
@@ -37,6 +38,23 @@ from sumy.parsers.html import HtmlParser # Essa biblioteca é usada para analisa
 from sumy.nlp.tokenizers import Tokenizer # Essa biblioteca é usada para tokenização de texto
 from tkinter import Scrollbar, Text, messagebox # Essa biblioteca é usada para criar widgets de texto roláveis e caixas de diálogo
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg # Essa biblioteca é usada para exibir gráficos em interfaces gráficas
+import seaborn as sns # Essa biblioteca é 
+from flask import Flask, request,jsonify, send_from_directory
+import concurrent.futures
+
+# Diretório onde está localizado o arquivo app.py da API Flask
+api_directory = r"C:\Users\rafael.nsouza\Documents\GitHub\JucaBiluca\codigos_lucas\controller"
+
+# Comando para iniciar a API Flask
+flask_command = ["python", "testeapi.py"]
+
+# Iniciar a API Flask usando subprocess
+try:
+    subprocess.Popen(flask_command, cwd=api_directory)
+    print("API Flask iniciada com sucesso!")
+except Exception as e:
+    print("Erro ao iniciar a API Flask:", e)
+
 
 # Baixar as stopwords em português, se ainda não tiver sido feito
 nltk.download('stopwords')
@@ -48,191 +66,272 @@ reddit = praw.Reddit(
     user_agent="aps",
 )
 
-# Carregar o modelo e o tokenizer pré-treinado
-model_name = 'neuralmind/bert-base-portuguese-cased'
-model_torch = BertForSequenceClassification.from_pretrained(model_name, num_labels=2)
-model_torch.load_state_dict(torch.load(r'C:\Users\rafael.nsouza\Documents\GitHub\JucaBiluca\codigos\jupyter\model.bin'))
-
-tokenizer_raf = AutoTokenizer.from_pretrained(r'C:\Users\rafael.nsouza\Documents\GitHub\JucaBiluca\codigos\jupyter\tokenizer_dir')
-
 # Defina sua chave da API do OpenAI
 openai.api_key = '---'
 
-# Função para limpar os dados
-def Limpeza_dados(texto):
-    # Remover links
-    texto = re.sub(r'http\S+', '', texto)
-    # Remover menções a usuários
-    texto = re.sub(r'@\w+', '', texto)
-    # Remover caracteres especiais e números
-    texto = re.sub(r'[^a-zA-Z\s]', '', texto)
-    # Remover espaços extras
-    texto = re.sub(r'\s+', ' ', texto)
-    return texto.strip()
-
-# Função para remover acentos
-def remover_acentos(texto):
-    return ''.join(c for c in unicodedata.normalize('NFD', texto) if unicodedata.category(c) != 'Mn')
-
-# Função para classificar o sentimento do texto
-def classify_sentiment(text, tokenizer_raf, model_torch):
-    # Limpeza de dados
-    text = Limpeza_dados(text)
-    text = remover_acentos(text)
-
-    # Tokenização
-    inputs = tokenizer_raf(text, padding=True, truncation=True, max_length=512, return_tensors='pt')
-
-    # Passagem para a frente
-    model_torch.eval()
-    with torch.no_grad():
-        outputs = model_torch(**inputs)
-
-    # Obter a previsão do modelo
-    _, preds = torch.max(outputs.logits, dim=1)
-
-    # Converter a previsão em um sentimento
-    if preds.item() == 1:
-        return "Positivo"
-    else:
-        return "Negativo"
-
-# Função para obter dados do Reddit
-def obter_dados():
-    # Lista de tópicos de interesse (palavras-chave)
-    topics = ["desmatamento", "incendios", "barragem", "chuva", "poluição"]
-    
-    # Lista para armazenar os dados
-    data = []
-    dataSentiment = [] 
-    
-    # Adicionar os dados à lista
-    for keyword in topics:
-        # Contadores para postagens positivas e negativas
-        positive_count = 0
-        negative_count = 0
-
-        for submission in reddit.subreddit("all").search(keyword, sort="hot", time_filter="month", limit=20):
-            if submission.selftext.strip() != "" or submission.url.strip() != "":
-                # Obtendo os metadados da mensagem
-                url = submission.url
-                titulo = submission.title
-                texto = submission.selftext
-                data_postagem = submission.created_utc
-
-                # Convertendo a data para o formato legível
-                data_formatada = datetime.utcfromtimestamp(data_postagem).strftime('%Y-%m-%d %H:%M:%S')
-
-                # Classificar o sentimento do texto
-                sentimento = classify_sentiment(titulo + " " + texto, tokenizer_raf, model_torch)
-
-                # Adicionando os metadados à lista de dados
-                data.append([keyword, url, titulo, texto, data_formatada, sentimento])
-                # Atualizar os contadores com base no sentimento
-                if sentimento == "Positivo":
-                    positive_count += 1
-                elif sentimento == "Negativo":
-                    negative_count += 1
-        # Calcular a porcentagem de notícias positivas e negativas
-        total_count = positive_count + negative_count
-        positive_percentage = (positive_count / total_count) * 100 if total_count > 0 else 0
-        negative_percentage = (negative_count / total_count) * 100 if total_count > 0 else 0                    
-            
-        # Obter a data atual
-        current_date = datetime.now().strftime("%Y-%m-%d")
-    
-        # Armazenar os resultados na lista de dados
-        if keyword in topics:
-            dataSentiment.append([current_date, keyword, positive_percentage, negative_percentage])
-    
-    # Criar um DataFrame com os dados
-    df = pd.DataFrame(dataSentiment, columns=['Data', 'Palavra Chave', 'Porcentagem Positiva', 'Porcentagem Negativa'])
-
-    # Salvar o DataFrame em um arquivo CSV
-    csv_file_path = r'C:\Users\Computador\Documents\DOCUMENTOSDIVERSOS\DocumentosFaculdade\5Periodo\APS\DESENVOLVIMENTO\APS2024\data\reddit_sentiment_data.csv'
-
-    # Salvar o DataFrame em um arquivo CSV (modo append)
-    df.to_csv(csv_file_path, index=False, mode='a', header=not os.path.isfile(csv_file_path))
-
-    print("Dados salvos com sucesso no arquivo CSV.")
-    
-    return data
+def fetch_data(url):
+    response = requests.get(url)
+    return response.json()
 
 def mostrar_tabela():
     # Mudar o cursor para um indicador de espera
     root.config(cursor="wait")
     root.update()  # Atualizar a janela para mostrar a mudança no cursor
     
+    url = 'http://localhost:5000/reddit'
+    response = requests.get(url)
+
     # Criar uma nova janela
     janela_tabela = tk.Toplevel(root)
     janela_tabela.title("Tabela de Dados")
 
     # Maximizar a janela da tabela
-    #janela_tabela.state('zoomed')
+    janela_tabela.state('zoomed')
 
     # Criar um frame na nova janela para conter a tabela
     frame_tabela_window = tk.Frame(janela_tabela)
     frame_tabela_window.pack()
 
-    # Cria uma tabela usando o widget Treeview
-    tabela = ttk.Treeview(frame_tabela_window)
-    tabela["columns"] = ("Palavra-Chave", "URL", "Título", "Texto", "Data", "Sentimento")
-    tabela.heading("#0", text="ID")
+    # Criar uma árvore de visualização para exibir os dados
+    tabela = ttk.Treeview(janela_tabela)
+    tabela["columns"] = ("Palavra-Chave", "URL", "Titulo", "Texto", "Data", "Sentimento", "Método", "Cliente IP")
+    tabela.heading("#0", text="Índice")
     tabela.heading("Palavra-Chave", text="Palavra-Chave")
     tabela.heading("URL", text="URL")
-    tabela.heading("Título", text="Título")
+    tabela.heading("Titulo", text="Titulo")
     tabela.heading("Texto", text="Texto")
     tabela.heading("Data", text="Data")
     tabela.heading("Sentimento", text="Sentimento")
+    tabela.heading("Método", text="Método")
+    tabela.heading("Cliente IP", text="Cliente IP")
 
-    # Definir a largura das colunas de forma padronizada
-    tabela.column("#0", width=50)  # ID
-    tabela.column("Palavra-Chave", width=150)
-    tabela.column("URL", width=250)
-    tabela.column("Título", width=200)
-    tabela.column("Texto", width=500)
-    tabela.column("Data", width=140)
-    tabela.column("Sentimento", width=140)
+    # Definir a largura das colunas
+    tabela.column("#0", width=50)  # Índice
+    tabela.column("Palavra-Chave", width=100)
+    tabela.column("URL", width=150)
+    tabela.column("Titulo", width=100)
+    tabela.column("Texto", width=100)
+    tabela.column("Data", width=100)
+    tabela.column("Sentimento", width=150)
+    tabela.column("Método", width=100)
+    tabela.column("Cliente IP", width=100)
 
 
     # Ler os dados do Reddit (supondo que esta função existe)
-    data = obter_dados()
+    csv_file_path = r'C:\Users\rafael.nsouza\Documents\GitHub\JucaBiluca\data\reddit1.csv'
+    
+    # Ler os dados do arquivo CSV usando pandas
+    df = pd.read_csv(csv_file_path)
+    
+    # Converter os dados para uma lista de listas
+    data = df.values.tolist()
+    
 
     # Adicionar os dados à tabela
     for index, row in enumerate(data):
-        tabela.insert("", "end", text=index, values=(row[0], row[1], row[2], row[3], row[4], row[5]))
+        tabela.insert("", "end", text=index, values=(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7]))
 
     # Adicionar um botão para fechar a janela da tabela
     botao_fechar_tabela = tk.Button(janela_tabela, text="Fechar Tabela", command=janela_tabela.destroy, borderwidth=3, relief="groove", padx=5, pady=10, bg="#0b4a8a", fg="black", font=("Arial", 12, "bold"), width=25)
     botao_fechar_tabela.pack(side=tk.BOTTOM, pady=0)
-
-    # Adicionar um botão para analisar sentimentos
-    def analisar_sentimento():
-        # Obter o item selecionado na tabela
-        selected_item = tabela.selection()[0]
-        item_values = tabela.item(selected_item)['values']
-
-        # Obter o texto do título e do texto
-        titulo = item_values[2]
-        texto = item_values[3]
-
-        # Classificar o sentimento (supondo que esta função existe)
-        sentimento = classify_sentiment(titulo + " " + texto, tokenizer_raf, model_torch)
-
-        # Atualizar o valor na tabela
-        tabela.item(selected_item, values=(item_values[0], item_values[1], item_values[2], item_values[3], item_values[4], sentimento))
-
-    #Botão para analisar sentimentos
-    # Desativar o botão
-    botao_analisar_sentimentos = tk.Button(frame_tabela_window, text="Analisar Sentimentos", command=analisar_sentimento, borderwidth=3, relief="groove", padx=5, pady=10, bg="#0b4a8a", fg="black", font=("Arial", 12, "bold"), width=25)
+    
+    botao_analisar_sentimentos = tk.Button(frame_tabela_window, text="Tabela de Análise de Sentimentos", command=tabelaSentimentos, borderwidth=3, relief="groove", padx=5, pady=10, bg="#0b4a8a", fg="black", font=("Arial", 12, "bold"), width=25)
     botao_analisar_sentimentos.pack(side=tk.BOTTOM, pady=0)
-
 
     tabela.pack(expand=True, fill="both")
 
     # Mudar o cursor de volta para o padrão
     root.config(cursor="")
     root.update()  # Atualizar a janela para mostrar a mudança no cursor
+
+
+def tabelaSentimentos():
+        # Criar uma nova janela
+    janelaSentimentos = tk.Toplevel(root)
+    janelaSentimentos.title("Tabela de Análise de Sentimentos")
+
+    # Maximizar a janela da tabela
+    janelaSentimentos.state('zoomed')
+
+    # Criar um frame na nova janela para conter a tabela
+    frameSentimentos_window = tk.Frame(janelaSentimentos)
+    frameSentimentos_window.pack()
+
+    # Criar uma árvore de visualização para exibir os dados
+    tabeladeSentimentos = ttk.Treeview(janelaSentimentos)
+    tabeladeSentimentos["columns"] = ("Data", "Palavra-chave", "Porcentagem Positiva", "Porcentagem Negativa")
+    tabeladeSentimentos.heading("#0", text="Índice")
+    tabeladeSentimentos.heading("Data", text="Data")
+    tabeladeSentimentos.heading("Palavra-chave", text="Palavra-chave")
+    tabeladeSentimentos.heading("Porcentagem Positiva", text="Porcentagem Positiva")
+    tabeladeSentimentos.heading("Porcentagem Negativa", text="Porcentagem Negativa")
+
+    # Definir a largura das colunas
+    tabeladeSentimentos.column("#0", width=50)  # Índice
+    tabeladeSentimentos.column("Data", width=100)
+    tabeladeSentimentos.column("Palavra-chave", width=150)
+    tabeladeSentimentos.column("Porcentagem Positiva", width=100)
+    tabeladeSentimentos.column("Porcentagem Negativa", width=100)
+
+    # Ler os dados do Reddit (supondo que esta função existe)
+    csv_file_path = r'C:\Users\rafael.nsouza\Documents\GitHub\JucaBiluca\data\reddit_sentiment_data.csv'
+        
+    # Ler os dados do arquivo CSV usando pandas
+    df = pd.read_csv(csv_file_path)
+        
+    # Converter os dados para uma lista de listas
+    data = df.values.tolist()
+
+    for index, row in enumerate(data):   
+        tabeladeSentimentos.insert("", "end", text=index, values=(row[0], row[1], row[2], row[3]))
+    print(f"Dados ausentes na linha {index + 1}. Ignorando esta linha.")
+    #Botão para analisar sentimentos
+    # Desativar o botão
+
+    # Botão mostrar dashboard
+    button_mostrar_dashboard = tk.Button(frameSentimentos_window, text="Mostrar DashBoard", command= mostrarDashboard, borderwidth=3, relief="groove", padx=5, pady=10, bg="#0b4a8a", fg="black", font=("Arial", 12, "bold"), width=25)
+    button_mostrar_dashboard.pack(side="left", padx=0)
+
+
+    tabeladeSentimentos.pack(expand=True, fill="both")
+
+def mostrarDashboard():
+    # Ler o arquivo CSV
+    df = pd.read_csv(r"C:\Users\rafael.nsouza\Documents\GitHub\JucaBiluca\data\reddit_sentiment_data.csv")
+    # Converter a coluna Data para o tipo datetime
+    df['Data'] = pd.to_datetime(df['Data'])
+    # Transformar a data no formato "dd-mm-yyyy"
+    df['Data'] = df['Data'].dt.strftime('%d-%m-%Y')
+    
+    # Gráfico de Barras
+    # Criar subplots para cada dia
+    fig, axs = plt.subplots(1, 2, figsize=(18, 8)) 
+    # Contador
+    A = 0
+    for i in df.columns.values[2:]:
+        A += 1
+        ax = axs[A - 1]  # Seleciona o subplot correspondente
+        sns.barplot(data=df.fillna('NaN'), x='Data', y=i, hue='Palavra-chave', palette='viridis', ax=ax)
+        ax.set_ylim(0, 121)  # Definir intervalo do eixo y para 0 a 100
+        ax.set_title(i, fontsize=15)
+        for p in ax.patches:
+            ax.annotate(f'{p.get_height():.2f}%', (p.get_x() + p.get_width() / 2., p.get_height()), ha='center', va='center', xytext=(0, 10), textcoords='offset points', fontsize=9, color='red')
+        if A >= 7:
+            ax.tick_params(axis='x', rotation=45)
+    # Layout
+    plt.tight_layout(h_pad=2)
+
+    # Maximizar a figura
+    manager = plt.get_current_fig_manager()
+    manager.window.state('zoomed')
+
+    # Exibir a figura maximizada
+    plt.show()
+
+    # Grafico de linhas
+    # Obter todas as palavras-chave únicas
+    palavras_chave_unicas = df['Palavra-chave'].unique()
+    # Definir o número de linhas e colunas para os subplots
+    num_linhas = (len(palavras_chave_unicas) + 1) // 2
+    num_colunas = 2
+
+    # Criar subplots
+    fig, axes = plt.subplots(num_linhas, num_colunas, figsize=(15, 10), gridspec_kw={'hspace': 0.4})
+
+    # Ajustar o espaçamento entre os subplots manualmente
+    plt.subplots_adjust(hspace=0.6, wspace=0.4)
+
+    # Iterar sobre as palavras-chave únicas e criar um gráfico de linha para cada uma
+    for idx, palavra_chave in enumerate(palavras_chave_unicas):
+        linha = idx // num_colunas
+        coluna = idx % num_colunas
+        # Filtrar o DataFrame para a palavra-chave específica
+        df_palavra_chave = df[df['Palavra-chave'] == palavra_chave]
+        # Plotar linha para porcentagem positiva
+        sns.lineplot(ax=axes[linha, coluna], data=df_palavra_chave, x='Data', y='Porcentagem Positiva', marker='o', label=f'Positiva - {palavra_chave}')
+        # Plotar linha para porcentagem negativa
+        sns.lineplot(ax=axes[linha, coluna], data=df_palavra_chave, x='Data', y='Porcentagem Negativa', marker='o', label=f'Negativa - {palavra_chave}')
+        axes[linha, coluna].set_title(f'Tendência de Sentimento para "{palavra_chave}"')
+        axes[linha, coluna].set_xlabel('Data')
+        axes[linha, coluna].set_ylabel('Porcentagem')
+        axes[linha, coluna].tick_params(axis='x', labelsize=8)  # Diminuir tamanho da fonte dos rótulos do eixo x e rotacioná-los
+        axes[linha, coluna].xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%d/%m'))  # Formatar a data para dia/mês
+        axes[linha, coluna].legend()
+        
+    # Remover subplots não utilizados
+    for idx in range(len(palavras_chave_unicas), num_linhas * num_colunas):
+        linha = idx // num_colunas
+        coluna = idx % num_colunas
+        fig.delaxes(axes[linha, coluna])
+
+    # Maximizar a figura
+    manager = plt.get_current_fig_manager()
+    manager.window.state('zoomed')
+
+    plt.show()
+
+    # Plotagem do Gráfico de dispersão.
+    
+    # Plot
+    plt.figure(figsize=(10, 6))
+
+    # Gráfico de dispersão
+    sns.scatterplot(data=df, x='Porcentagem Positiva', y='Porcentagem Negativa', hue='Palavra-chave', palette='viridis')
+
+    # Configurações do eixo y
+    plt.ylim(0, 100)
+
+    # Título e rótulos dos eixos
+    plt.title('Relação entre Porcentagens Positivas e Negativas')
+    plt.xlabel('Porcentagem Positiva')
+    plt.ylabel('Porcentagem Negativa')
+
+    plt.legend(title='Palavra-chave')
+
+    # Maximizar a figura
+    manager = plt.get_current_fig_manager()
+    manager.window.state('zoomed')
+    plt.show()
+
+
+    # Gráfico de pizza
+    # Converter a coluna Data para o tipo datetime
+    df['Data'] = pd.to_datetime(df['Data']).dt.strftime('%d-%m-%Y')
+
+    # Selecionar os dias desejados
+    dias_selecionados = ['08-05-2024', '09-05-2024', '10-05-2024', '11-05-2024', '12-05-2024']
+
+    # Criar uma figura para os subplots
+    fig, axs = plt.subplots(nrows=1, ncols=len(dias_selecionados), figsize=(18, 6))
+
+    # Iterar sobre os dias selecionados
+    for i, data_selecionada in enumerate(dias_selecionados):
+        # Filtrar o DataFrame para o dia selecionado
+        df_data_selecionada = df[df['Data'] == data_selecionada]
+
+        # Calcular a distribuição das porcentagens positivas e negativas para o dia selecionado
+        total_positivo = df_data_selecionada['Porcentagem Positiva'].fillna(0).sum()
+        total_negativo = df_data_selecionada['Porcentagem Negativa'].fillna(0).sum()
+
+        # Criar rótulos para os pedaços do gráfico de pizza
+        labels = ['Positivo', 'Negativo']
+        sizes = [total_positivo, total_negativo]
+        colors = ['skyblue', 'lightcoral']
+        explode = (0.1, 0)  # Explodir o primeiro pedaço (Positivo)
+
+        # Plotar o gráfico de pizza no subplot correspondente
+        axs[i].pie(sizes, explode=explode, labels=labels, colors=colors, autopct='%1.1f%%', startangle=140)
+        axs[i].set_title(f'Distribuição das Porcentagens para {data_selecionada}', fontsize=10)
+
+    # Ajustar o layout da figura
+    plt.tight_layout()
+
+    # Maximizar a figura
+    manager = plt.get_current_fig_manager()
+    manager.window.state('zoomed')
+
+    # Exibir a figura com os subplots
+    plt.show()
 
 # Função para obter o conteúdo HTML de um link
 def get_html_content(url):
@@ -243,6 +342,7 @@ def get_html_content(url):
     except requests.RequestException as e:
         print(f"Erro ao obter o conteúdo HTML do URL {url}: {e}")
         return None
+
 
 # Função para coletar todas as palavras de um texto
 def collect_words(text):
@@ -296,13 +396,11 @@ rss_feeds = {
     "O Eco": "https://www.oeco.org.br/feed/",
 }
 
-
 # Itera sobre a lista de feeds RSS e imprime as principais notícias de cada um com resumo
 for site, rss_feed in rss_feeds.items():
     # Chama a função para imprimir as notícias com resumo de cada feed
     print_top_news_rss_with_summary(site, rss_feed)
     print("\n")  # Imprime uma linha em branco entre os resultados
-
 
 # Lista de palavras relacionadas ao meio ambiente que queremos buscar
 environment_related_words = [ # Lista de palavras relacionadas ao meio ambiente
@@ -445,35 +543,35 @@ summary = "No output from the model"
 if response and response.choices and len(response.choices) > 0:
     summary = response.choices[0].message['content'].strip()
 
-# print("\n\nRelatório das notícias relacionadas ao Meio Ambiente:")
-# print('\n', summary)
+print("\n\nRelatório das notícias relacionadas ao Meio Ambiente:")
+print('\n', summary)
 
-# # Função para fechar a janela ao clicar no botão "Fechar"
-# def close_window():
-#     root.destroy()
+# Função para fechar a janela ao clicar no botão "Fechar"
+def close_window():
+    root.destroy()
 
-# # Criar uma janela principal
-# root = tk.Tk()
-# root.title("Relatório das Notícias")
+# Criar uma janela principal
+root = tk.Tk()
+root.title("Relatório das Notícias")
 
-# # Criar um widget de texto rolável para exibir o relatório
-# report_text = scrolledtext.ScrolledText(root, width=80, height=30)
-# report_text.pack()
+# Criar um widget de texto rolável para exibir o relatório
+report_text = scrolledtext.ScrolledText(root, width=80, height=30)
+report_text.pack()
 
-# # Definir o texto do relatório
-# report_text.insert(tk.END, f"\n\nRelatório das notícias relacionadas ao Meio Ambiente:\n\n{summary}\n\n")
+# Definir o texto do relatório
+report_text.insert(tk.END, f"\n\nRelatório das notícias relacionadas ao Meio Ambiente:\n\n{summary}\n\n")
 
-# # Criar um botão para fechar a janela
-# close_button = tk.Button(root, text="Fechar", command=close_window)
-# close_button.pack()
+# Criar um botão para fechar a janela
+close_button = tk.Button(root, text="Fechar", command=close_window)
+close_button.pack()
 
-# # Iniciar o loop principal da interface gráfica
-# root.mainloop()
+# Iniciar o loop principal da interface gráfica
+root.mainloop()
 
 # Imprimir as polaridades das palavras
-# print("\nPolaridades das Palavras:")
-# for word, polarity in polarities.items():
-#     print(f"{word}: {polarity}")
+print("\nPolaridades das Palavras:")
+for word, polarity in polarities.items():
+    print(f"{word}: {polarity}")
 
 # Gráfico de barras das palavras mais repetidas
 plt.figure(figsize=(10, 6))
@@ -485,14 +583,14 @@ plt.xticks(rotation=45, ha='right')
 plt.tight_layout()
 plt.show()
 
-# Gráfico de barras horizontais da análise de sentimento das palavras
-plt.figure(figsize=(8, 6))
-plt.barh(list(polarity_counts.keys()), list(polarity_counts.values()), color=['green', 'red', 'gray'])
-plt.xlabel('Contagem')
-plt.ylabel('Sentimento')
-plt.title('Distribuição da Análise de Sentimento das Palavras')
-plt.grid(axis='x')
-plt.show()
+# # Gráfico de barras horizontais da análise de sentimento das palavras
+# plt.figure(figsize=(8, 6))
+# plt.barh(list(polarity_counts.keys()), list(polarity_counts.values()), color=['green', 'red', 'gray'])
+# plt.xlabel('Contagem')
+# plt.ylabel('Sentimento')
+# plt.title('Distribuição da Análise de Sentimento das Palavras')
+# plt.grid(axis='x')
+# plt.show()
 
 # Criando as janelas:
 
@@ -524,7 +622,6 @@ def plotar_grafico():
     # Criando uma nova janela para o gráfico
     janela_grafico = tk.Toplevel(root)
     janela_grafico.title("Gráfico de Barras")
-
     # Criando uma figura para o gráfico
     fig, ax = plt.subplots(figsize=(11, 8))
 
@@ -563,18 +660,18 @@ root.title("Notícias sobre o Meio Ambiente")
 largura_tela = root.winfo_screenwidth()
 altura_tela = root.winfo_screenheight()
 
-# Definindo o tamanho da janela
+# # Definindo o tamanho da janela
 largura_janela = 1000
 altura_janela = 600
 
-# Calculando a posição x e y da janela para centralizá-la
+# # Calculando a posição x e y da janela para centralizá-la
 posicao_x = int((largura_tela - largura_janela) / 2)
 posicao_y = int((altura_tela - altura_janela) / 2)
 
-# Definindo a posição inicial da janela
+# # Definindo a posição inicial da janela
 root.geometry(f"{largura_janela}x{altura_janela}+{posicao_x}+{posicao_y}")
 
-# Exibir a janela e atualizá-la para obter suas dimensões
+# # Exibir a janela e atualizá-la para obter suas dimensões
 root.update()
 
 # Obtendo as dimensões da janela principal
@@ -589,6 +686,18 @@ frame_height = 400 # Define a altura do frame como 500 pixels
 x_frame = (window_width - frame_width) // 2
 y_frame = 20
 
+def centralizar_frame(event=None):
+    # Obtendo as dimensões atualizadas da tela
+    screen_width = root.winfo_width()
+    screen_height = root.winfo_height()
+
+    # Calculando as coordenadas x e y para centralizar o frame
+    x_frame = (screen_width - frame_width) // 2
+    y_frame = (screen_height - frame_height) // 2
+
+    # Reposicionando o frame centralizado
+    frame_space.place(x=x_frame, y=y_frame)
+
 # Criando um frame para o espaço em branco
 frame_space = tk.Frame(root, width=frame_width, height=frame_height, bg="white")
 frame_space.place(x=x_frame, y=y_frame)  # Definindo a posição do frame
@@ -596,6 +705,11 @@ frame_space.place(x=x_frame, y=y_frame)  # Definindo a posição do frame
 # Adicionando um rótulo para exibir o texto dentro do frame
 text_widget = tk.Text(frame_space, wrap="word", bg="white")
 text_widget.pack(side="left", fill="y")
+
+root.state('zoomed')
+
+# Vinculando o evento de redimensionamento da janela à função de centralização do frame
+root.bind("<Configure>", centralizar_frame)
 
 # Adicionando uma barra de rolagem vertical
 scrollbar_y = tk.Scrollbar(frame_space, orient="vertical", command=text_widget.yview)
@@ -607,15 +721,15 @@ button_frame = tk.Frame(root)
 button_frame.pack(side="bottom", pady=10)  # Posicionando o frame na parte inferior da janela com algum espaço
 
 # Criando o botão 1 com a função definida acima
-button1_buscar_noticias = tk.Button(button_frame, text="Principais Notícias", command=buscar_noticias, borderwidth=3, relief="groove", padx=5, pady=10, bg="#074207", fg="black", font=("Arial", 12, "bold"), width=25)
+button1_buscar_noticias = tk.Button(button_frame, text="Principais Notícias",command=buscar_noticias, borderwidth=3, relief="groove", padx=5, pady=10, bg="#074207", fg="black", font=("Arial", 12, "bold"), width=25)
 button1_buscar_noticias.pack(side="left", padx=0)  # Posicionando o botão à esquerda dentro do frame
 
 # Modificando o botão 2 para chamar a função plotar_grafico
-button2_plotar_grafico = tk.Button(button_frame, text="Gráfico de Notícias", command=plotar_grafico, borderwidth=3, relief="groove", padx=5, pady=10, bg="#cc990e", fg="black", font=("Arial", 12, "bold"), width=25)
+button2_plotar_grafico = tk.Button(button_frame, text="Gráfico de Notícias",command=plotar_grafico, borderwidth=3, relief="groove", padx=5, pady=10, bg="#cc990e", fg="black", font=("Arial", 12, "bold"), width=25)
 button2_plotar_grafico.pack(side="left", padx=0)  # Posicionando o botão à esquerda dentro do frame
 
 # Modificando o botão 3 para chamar a função exibir_analise
-button3_exibir_analise = tk.Button(button_frame, text="Análise Escrita das Notícias", command=exibir_analise, borderwidth=3, relief="groove", padx=5, pady=10, bg="#0b4a8a", fg="black", font=("Arial", 12, "bold"), width=25)
+button3_exibir_analise = tk.Button(button_frame, text="Análise Escrita das Notícias",command=exibir_analise, borderwidth=3, relief="groove", padx=5, pady=10, bg="#0b4a8a", fg="black", font=("Arial", 12, "bold"), width=25)
 button3_exibir_analise.pack(side="left", padx=0)  # Posicionando o botão à esquerda dentro do frame
 
 # Botão mostrar tabela
@@ -623,11 +737,14 @@ button_mostrar_tabela = tk.Button(button_frame, text="Mostrar Tabela", command=m
 button_mostrar_tabela.pack(side="left", padx=0)
 
 
+
+
 # Definindo a cor de fundo da janela
 root.configure(background="#422407")
 
 # Iniciando o loop principal
 root.mainloop()
+
 
 """
 # O código acima cria uma interface gráfica simples com três botões que permitem buscar as principais notícias, plotar um gráfico de barras das palavras mais repetidas e exibir uma análise escrita das notícias. A análise escrita é gerada pelo GPT-3 com base nos títulos das notícias coletadas.
