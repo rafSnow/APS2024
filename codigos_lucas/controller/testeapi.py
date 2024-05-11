@@ -1,13 +1,12 @@
-from flask import Flask, request, jsonify, send_from_directory
-from datetime import datetime
-import praw
-import os
-import pandas as pd
+from flask import Flask, request, jsonify, send_from_directory # Essa biblioteca é usada para criar a API
+from datetime import datetime # Essa biblioteca é usada para trabalhar com datas e horas
+import praw # Essa biblioteca é usada para acessar a API do Reddit
+import os # Essa biblioteca é usada para trabalhar com o sistema operacional
+import pandas as pd     # Essa biblioteca é usada para trabalhar com dataframes
 from transformers import AutoTokenizer, BertForSequenceClassification, BertTokenizer # Essa biblioteca é usada para trabalhar com modelos de linguagem
 import torch # Essa biblioteca é usada para criar modelos de aprendizado de máquina
-import re
-import unicodedata
-
+import re # Essa biblioteca é usada para trabalhar com expressões regulares
+import unicodedata # Essa biblioteca é usada para trabalhar com caracteres unicode
 
 app = Flask(__name__)
 
@@ -20,9 +19,9 @@ reddit = praw.Reddit(
 # Carregar o modelo e o tokenizer pré-treinado
 model_name = 'neuralmind/bert-base-portuguese-cased'
 model = BertForSequenceClassification.from_pretrained(model_name, num_labels=2)
-model.load_state_dict(torch.load(r'C:\Users\rafael.nsouza\Documents\GitHub\JucaBiluca\codigos\jupyter\model.bin'))
+model.load_state_dict(torch.load(r'C:\Users\Computador\Documents\DOCUMENTOSDIVERSOS\DocumentosFaculdade\5Periodo\APS\DESENVOLVIMENTO\APS2024\codigos\jupyter\model.bin'))
 
-tokenizer = AutoTokenizer.from_pretrained(r'C:\Users\rafael.nsouza\Documents\GitHub\JucaBiluca\codigos\jupyter\tokenizer_dir')
+tokenizer = AutoTokenizer.from_pretrained(r'C:\Users\Computador\Documents\DOCUMENTOSDIVERSOS\DocumentosFaculdade\5Periodo\APS\DESENVOLVIMENTO\APS2024\codigos\jupyter\tokenizer_dir')
 
 # Função para limpar os dados
 def Limpeza_dados(texto):
@@ -111,7 +110,7 @@ def obter_dados(method, client_ip):
     df = pd.DataFrame(data, columns=['Palavra Chave', 'URL', 'Título', 'Texto', 'Data', 'Sentimento', 'Método', 'Cliente IP'])
 
     # Salvar o DataFrame em um arquivo CSV
-    csv_file_path = r'C:\Users\rafael.nsouza\Documents\GitHub\JucaBiluca\data\reddit1.csv'
+    csv_file_path = r'C:\Users\Computador\Documents\DOCUMENTOSDIVERSOS\DocumentosFaculdade\5Periodo\APS\DESENVOLVIMENTO\APS2024\data\reddit1.csv'
 
     # Salvar o DataFrame em um arquivo CSV (modo append)
     df.to_csv(csv_file_path, index=False, mode='a', header=not os.path.isfile(csv_file_path))
