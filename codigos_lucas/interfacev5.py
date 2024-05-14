@@ -138,22 +138,22 @@ def mostrar_tabela():
 
     # Ler os dados do Reddit (supondo que esta função existe)
     csv_file_path = r'C:\Users\Computador\Documents\DOCUMENTOSDIVERSOS\DocumentosFaculdade\5Periodo\APS\DESENVOLVIMENTO\APS2024\data\reddit1.csv'
-    
+
     # Ler os dados do arquivo CSV usando pandas
     df = pd.read_csv(csv_file_path)
-    
+
     # Converter os dados para uma lista de listas
     data = df.values.tolist()
-    
+
     # Adicionar os dados à tabela
     for index, row in enumerate(data):
         tabela.insert("", "end", text=index, values=(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7]))
 
     # Adicionar um botão para fechar a janela da tabela
-    botao_fechar_tabela = tk.Button(janela_tabela, text="Fechar Tabela", command=janela_tabela.destroy, borderwidth=3, relief="groove", padx=5, pady=10, bg="#0b4a8a", fg="black", font=("Arial", 12, "bold"), width=25)
+    botao_fechar_tabela = tk.Button(janela_tabela, text="Fechar Tabela", command=janela_tabela.destroy, borderwidth=3, relief="groove", padx=5, pady=10, bg="#0b4a8a", fg="white", font=("Arial", 12, "bold"), width=25)
     botao_fechar_tabela.pack(side=tk.BOTTOM, pady=0)
-    
-    botao_analisar_sentimentos = tk.Button(frame_tabela_window, text="Tabela de Análise de Sentimentos", command=tabelaSentimentos, borderwidth=3, relief="groove", padx=5, pady=10, bg="#0b4a8a", fg="black", font=("Arial", 12, "bold"), width=25)
+
+    botao_analisar_sentimentos = tk.Button(frame_tabela_window, text="Tabela de Análise de Sentimentos", command=tabelaSentimentos, borderwidth=3, relief="groove", padx=5, pady=10, bg="#0b4a8a", fg="white", font=("Arial", 12, "bold"), width=25)
     botao_analisar_sentimentos.pack(side=tk.BOTTOM, pady=0)
 
     tabela.pack(expand=True, fill="both")
@@ -215,11 +215,11 @@ def tabelaSentimentos():
     print(f"Dados ausentes na linha {index + 1}. Ignorando esta linha.")
 
     # Botão mostrar dashboard
-    button_mostrar_dashboard = tk.Button(frameSentimentos_window, text="Mostrar DashBoard", command= mostrarDashboard, borderwidth=3, relief="groove", padx=5, pady=10, bg="#0b4a8a", fg="black", font=("Arial", 12, "bold"), width=25)
+    button_mostrar_dashboard = tk.Button(frameSentimentos_window, text="Mostrar DashBoard", command= mostrarDashboard, borderwidth=3, relief="groove", padx=5, pady=10, bg="#0b4a8a", fg="white", font=("Arial", 12, "bold"), width=25)
     button_mostrar_dashboard.pack(side="left", padx=0)
 
     # Adicionar um botão para fechar a janela da tabela
-    botao_fechar_tabela = tk.Button(janelaSentimentos, text="Fechar Tabela", command=janelaSentimentos.destroy, borderwidth=3, relief="groove", padx=5, pady=10, bg="#0b4a8a", fg="black", font=("Arial", 12, "bold"), width=25)
+    botao_fechar_tabela = tk.Button(janelaSentimentos, text="Fechar Tabela", command=janelaSentimentos.destroy, borderwidth=3, relief="groove", padx=5, pady=10, bg="#0b4a8a", fg="white", font=("Arial", 12, "bold"), width=25)
     botao_fechar_tabela.pack(side=tk.BOTTOM, pady=0)
 
     tabeladeSentimentos.pack(expand=True, fill="both")
@@ -596,19 +596,19 @@ button_frame = tk.Frame(root)
 button_frame.pack(side="bottom", pady=10)  # Posicionando o frame na parte inferior da janela com algum espaço
 
 # Criando o botão 1 com a função definida acima
-button1_buscar_noticias = tk.Button(button_frame, text="Principais Notícias Ambientais",command=buscar_noticias_async, borderwidth=3, relief="groove", padx=5, pady=10, bg="#074207", fg="black", font=("Arial", 12, "bold"), width=30)
+button1_buscar_noticias = tk.Button(button_frame, text="Principais Notícias Ambientais",command=buscar_noticias_async, borderwidth=3, relief="groove", padx=5, pady=10, bg="#074207", fg="white", font=("Arial", 12, "bold"), width=30)
 button1_buscar_noticias.pack(side="left", padx=0)  # Posicionando o botão à esquerda dentro do frame
 
 # Modificando o botão 3 para chamar a função exibir_analise
-button3_exibir_analise = tk.Button(button_frame, text="Análise das Notícias Ambientais",command=exibir_analise, borderwidth=3, relief="groove", padx=5, pady=10, bg="#0b4a8a", fg="black", font=("Arial", 12, "bold"), width=30)
+button3_exibir_analise = tk.Button(button_frame, text="Análise das Notícias Ambientais",command=exibir_analise, borderwidth=3, relief="groove", padx=5, pady=10, bg="#0b4a8a", fg="white", font=("Arial", 12, "bold"), width=30)
 button3_exibir_analise.pack(side="left", padx=0)  # Posicionando o botão à esquerda dentro do frame
 
 # Botão mostrar tabela
-button_mostrar_tabela = tk.Button(button_frame, text="Tabela e Gráficos de Análise de Sentimento", command=mostrar_tabela, borderwidth=3, relief="groove", padx=5, pady=10, bg="#074207", fg="black", font=("Arial", 12, "bold"), width=37)
+button_mostrar_tabela = tk.Button(button_frame, text="Tabela e Gráficos de Análise de Sentimento", command=mostrar_tabela, borderwidth=3, relief="groove", padx=5, pady=10, bg="#074207", fg="white", font=("Arial", 12, "bold"), width=37)
 button_mostrar_tabela.pack(side="left", padx=0)
 
 # Botão limpar frame
-button_limpar_tela = tk.Button(button_frame, text="Limpar Tela", command=limpar_tela, borderwidth=3, relief="groove", padx=5, pady=10, bg="#0b4a8a", fg="black", font=("Arial", 12, "bold"), width=15)
+button_limpar_tela = tk.Button(button_frame, text="Limpar Tela", command=limpar_tela, borderwidth=3, relief="groove", padx=5, pady=10, bg="#0b4a8a", fg="white", font=("Arial", 12, "bold"), width=15)
 button_limpar_tela.pack(side="left", padx=0)
 
 # Definindo a cor de fundo da janela
@@ -617,7 +617,198 @@ root.configure(background="#422407")
 # Iniciando o loop principal
 root.mainloop()
 
-# Colocando a janela principal em primeiro plano
-root.lift()
-root.attributes('-topmost', True)
-root.attributes('-topmost', False)
+
+"""
+!Perguntas a respeito do funcionamento do código:
+1) O que faz a função fetch_data?
+2) Qual a finalidade da função mostrar_tabela?
+3) O que é feito pela função tabelaSentimentos?
+4) Qual a finalidade da função mostrarDashboard?
+5) O que é feito pela função buscar_noticias_async?
+6) Qual a finalidade da função exibir_analise?
+7) O que é feito pela função limpar_tela?
+8) Qual a finalidade da variável api_directory?
+9) Qual a finalidade da variável flask_command?
+10) O que é feito pela variável reddit?
+11) Qual a finalidade da variável openai.api_key?
+12) O que é feito pela variável session?
+13) Qual a finalidade da variável retry?
+14) O que é feito pela variável adapter?
+15) Qual a finalidade da variável html_cache?
+16) O que é feito pela variável get_html_content?
+17) Qual a finalidade da variável collect_words?
+18) O que é feito pela variável titles_list?
+19) Como funciona a análise de sentimentos?
+20) O que é feito pela variável get_summary?
+21) Qual a finalidade da variável rss_feeds?
+22) O que é feito pela variável environment_related_words?
+23) Qual a finalidade da variável environment_words?
+24) O que é feito pela variável word_freq?
+25) Qual a finalidade da variável top_words?
+26) Como funciona o modelo GPT-3.5-turbo?
+27) O que é feito pela variável response?
+28) Qual a finalidade da variável prompt_text?
+29) O código está bem documentado?
+30) O código tem em sua estrutura funções bem definidas?
+31) O código possui variáveis com nomes significativos?
+32) A interface é composta por botões que realizam ações específicas?
+33) O código possui tratamento de exceções?
+34) O código possui comentários explicativos?
+35) O código possui uma estrutura organizada e legível?
+36) A interface tem quantos botões e quais são suas funções?
+37) Qual a importância da inteligência artificial na análise de sentimentos?
+38) Como a análise de sentimentos pode ser aplicada em diferentes áreas?
+39) Quais são as vantagens e desvantagens da análise de sentimentos?
+40) Como a análise de sentimentos pode ser utilizada para tomada de decisões?
+41) Quais são as principais técnicas utilizadas na análise de sentimentos?
+42) Como a análise de sentimentos pode ser aplicada em redes sociais e mídias digitais?
+43) Quais são os desafios da análise de sentimentos em textos em português?
+44) Como a análise de sentimentos pode ser utilizada para monitorar a reputação de uma marca?
+45) Quais são as limitações da análise de sentimentos baseada em texto?
+46) Os sites de notícias podem influenciar a análise de sentimentos?
+47) Como a análise de sentimentos pode ser utilizada para prever tendências de mercado?
+48) Quais são as aplicações práticas da análise de sentimentos em empresas e organizações?
+49) Os sites empregados no código são confiáveis para a análise de sentimentos?
+50) Os dados das notícias coletadas são suficientes para uma análise de sentimentos precisa?
+51) Sobre a estrutura do código, o que poderia ser melhorado para facilitar a manutenção?
+52) A criação dos gráficos e visualizações poderia ser otimizada para melhorar a apresentação dos dados?
+53) Sobre os gráficos e visualizações, quais informações são mais relevantes para a análise de sentimentos?
+54) Como os gráficos são gerados e quais as suas importâncias para a análise de sentimentos?
+55) Como é feita a integração entre a interface gráfica e as funções do código?
+56) Quais são as bibliotecas utilizadas no código?
+57) Como é feita a autenticação na API do OpenAI?
+58) O código possui algum tipo de armazenamento persistente dos dados coletados?
+59) Como é feita a exibição dos gráficos na interface gráfica?
+60) O código possui alguma forma de controle de acesso às funcionalidades da interface?
+61) Quais são as principais dependências do projeto?
+62) Como é feita a coleta das notícias dos feeds RSS?
+63) O código possui algum tipo de tratamento para evitar requisições excessivas aos sites de notícias?
+64) Como é feita a análise de sentimentos dos textos coletados?
+65) O código possui alguma forma de filtrar as notícias coletadas por relevância?
+66) Como é feita a exibição dos dados da análise de sentimentos na tabela e nos gráficos?
+67) O código possui alguma forma de exportar os dados coletados e analisados?
+68) Como é feito o tratamento de erros durante a execução do código?
+69) O código possui alguma forma de atualização automática dos dados coletados?
+70) Como é feita a comunicação entre o código e o servidor Flask?
+71) O código possui alguma forma de lidar com atrasos na resposta das requisições?
+72) Como é feita a exibição dos dados de análise de sentimentos por meio de gráficos?
+73) O código possui alguma forma de lidar com a falta de conexão com a internet?
+74) Como é feita a exibição dos dados de análise de sentimentos por meio de tabelas?
+75) O código possui alguma forma de lidar com a falta de resposta da API do OpenAI?
+
+*Respostas:
+1) A função fetch_data é responsável por fazer uma requisição GET para uma URL e retornar o conteúdo JSON da resposta.
+2) A função mostrar_tabela exibe uma tabela com os dados obtidos de uma API REST.
+3) A função tabelaSentimentos exibe uma tabela com os dados de análise de sentimentos obtidos de um arquivo CSV.
+4) A função mostrarDashboard exibe gráficos e visualizações dos dados de análise de sentimentos.
+5) A função buscar_noticias_async busca as principais notícias de feeds RSS de forma assíncrona.
+6) A função exibir_analise exibe uma análise detalhada das notícias relacionadas ao meio ambiente.
+7) A função limpar_tela limpa o conteúdo do widget de texto na interface gráfica.
+8) A variável api_directory armazena o diretório da API REST.
+9) A variável flask_command armazena o comando para iniciar o servidor Flask.
+10) A variável reddit armazena os dados obtidos do Reddit.
+11) A variável openai.api_key armazena a chave da API do OpenAI.
+12) A variável session é um objeto de sessão para fazer requisições HTTP.
+13) A variável retry é um objeto de tentativa de requisição HTTP.
+14) A variável adapter é um adaptador para lidar com tentativas de requisição HTTP.
+15) A variável html_cache é um dicionário para armazenar o conteúdo HTML em cache.
+16) A variável get_html_content obtém o conteúdo HTML de uma URL com cache.
+17) A variável collect_words coleta todas as palavras de um texto de forma eficiente.
+18) A variável titles_list armazena os títulos das notícias.
+19) A análise de sentimentos é um processo de identificar e classificar as emoções expressas em um texto.
+20) A função get_summary obtém o resumo de uma notícia a partir de um link.
+21) A variável rss_feeds armazena os feeds RSS dos sites de notícias.
+22) A variável environment_related_words armazena uma lista de palavras relacionadas ao meio ambiente.
+23) A variável environment_words armazena as palavras relacionadas ao meio ambiente encontradas nas notícias.
+24) A variável word_freq armazena a frequência das palavras relacionadas ao meio ambiente.
+25) A variável top_words armazena as palavras mais comuns e suas frequências.
+26) O modelo GPT-3.5-turbo é um modelo de linguagem de inteligência artificial desenvolvido pela OpenAI.
+27) A variável response armazena a resposta do modelo GPT-3.5-turbo.
+28) A variável prompt_text armazena o texto enviado para o modelo GPT-3.5-turbo.
+29) Sim, o código está bem documentado com comentários explicativos.
+30) Sim, o código possui funções bem definidas e organizadas.
+31) Sim, o código possui variáveis com nomes significativos que indicam sua finalidade.
+32) Sim, a interface é composta por botões que realizam ações específicas, como buscar notícias e exibir análises.
+33) Sim, o código possui tratamento de exceções para lidar com erros durante a execução.
+34) Sim, o código possui comentários explicativos que descrevem o que cada parte do código faz.
+35) Sim, o código possui uma estrutura organizada e legível, facilitando a compreensão e manutenção.
+36) A interface possui 4 botões: buscar_noticias_async, exibir_analise, mostrar_tabela e limpar_tela.
+37) A inteligência artificial é importante na análise de sentimentos por sua capacidade de processar grandes volumes de dados de forma eficiente.
+38) A análise de sentimentos pode ser aplicada em áreas como marketing, atendimento ao cliente, pesquisa de mercado e análise de feedback.
+39) As vantagens da análise de sentimentos incluem a identificação de tendências, feedback em tempo real e insights para tomada de decisões. As desvantagens incluem a necessidade de treinamento e a precisão dos resultados.
+40) A análise de sentimentos pode ser utilizada para tomar decisões com base na opinião e sentimentos dos clientes, identificando áreas de melhoria e oportunidades de negócio.
+41) As principais técnicas utilizadas na análise de sentimentos incluem análise de texto, processamento de linguagem natural, aprendizado de máquina e mineração de dados.
+42) A análise de sentimentos pode ser aplicada em redes sociais e mídias digitais para monitorar a opinião pública, identificar tendências e avaliar a reputação de uma marca.
+43) Os desafios da análise de sentimentos em textos em português incluem a variação linguística, gírias, sarcasmo e dupla negação, que podem dificultar a interpretação correta.
+44) A análise de sentimentos pode ser utilizada para monitorar a reputação de uma marca, identificar problemas de atendimento ao cliente e avaliar a satisfação dos clientes.
+45) As limitações da análise de sentimentos baseada em texto incluem a ambiguidade, a subjetividade e a falta de contexto, que podem afetar a precisão dos resultados.
+46) Os sites de notícias podem influenciar a análise de sentimentos ao fornecer informações que refletem a opinião e sentimentos das pessoas sobre determinados assuntos.
+47) A análise de sentimentos pode ser utilizada para prever tendências de mercado, identificar oportunidades de negócio e antecipar mudanças no comportamento do consumidor.
+48) As aplicações práticas da análise de sentimentos em empresas e organizações incluem a melhoria do atendimento ao cliente, a identificação de problemas e a avaliação da satisfação dos colaboradores.
+49) Os sites empregados no código são confiáveis para a análise de sentimentos, pois fornecem notícias relevantes e atualizadas sobre o meio ambiente.
+50) Os dados das notícias coletadas são suficientes para uma análise de sentimentos precisa, pois abordam temas relacionados ao meio ambiente e sustentabilidade.
+51) Para facilitar a manutenção, o código poderia ser dividido em funções mais específicas e documentado de forma mais detalhada.
+52) A criação dos gráficos e visualizações poderia ser otimizada para melhorar a apresentação dos dados e facilitar a interpretação das informações.
+53) As informações mais relevantes para a análise de sentimentos nos gráficos são as porcentagens de sentimentos positivos e negativos ao longo do tempo.
+54) Os gráficos são gerados a partir dos dados de análise de sentimentos e ajudam a visualizar as tendências e padrões nos sentimentos expressos nos textos analisados.
+55) A comunicação entre a interface gráfica e as funções do código é feita por meio de eventos de botões que acionam as ações desejadas.
+56) As bibliotecas utilizadas no código incluem pandas, matplotlib, seaborn, nltk, feedparser, requests, BeautifulSoup e openai.
+57) A autenticação na API do OpenAI é feita por meio da chave de API fornecida pela plataforma.
+58) O código não possui armazenamento persistente dos dados coletados, pois as notícias são buscadas em tempo real.
+59) A exibição dos gráficos na interface gráfica é feita por meio da biblioteca matplotlib, que gera os gráficos a partir dos dados de análise de sentimentos.
+60) O código não possui controle de acesso às funcionalidades da interface, pois é um projeto de demonstração e não requer autenticação.
+61) As principais dependências do projeto são as bibliotecas Python utilizadas para análise de dados, processamento de texto e interação com APIs.
+62) A coleta das notícias dos feeds RSS é feita por meio da biblioteca feedparser, que analisa os feeds e extrai as informações das notícias.
+63) O código não possui tratamento para evitar requisições excessivas aos sites de notícias, mas poderia ser implementado para evitar sobrecarga nos servidores.
+64) A análise de sentimentos dos textos coletados é feita por meio da biblioteca nltk, que processa os textos e identifica as palavras relacionadas ao meio ambiente.
+65) O código não possui um filtro de relevância para as notícias coletadas, mas poderia ser implementado para priorizar notícias mais relevantes.
+66) A exibição dos dados da análise de sentimentos na tabela e nos gráficos é feita por meio das funções definidas no código.
+67) O código não possui uma forma de exportar os dados coletados e analisados, mas poderia ser implementado para gerar relatórios ou arquivos de saída.
+68) O tratamento de erros durante a execução do código é feito por meio de exceções e mensagens de erro para informar o usuário sobre problemas.
+69) A atualização automática dos dados coletados não é implementada no código, mas poderia ser feita por meio de agendamento de tarefas ou eventos.
+70) A comunicação entre o código e o servidor Flask é feita por meio de requisições HTTP para buscar e exibir os dados na interface gráfica.
+71) O código não possui tratamento para atrasos na resposta das requisições, mas poderia ser implementado para melhorar a experiência do usuário.
+72) A exibição dos dados de análise de sentimentos por meio de gráficos é feita para visualizar as tendências e padrões nos sentimentos expressos nos textos.
+73) O código não possui uma forma de lidar com a falta de conexão com a internet, mas poderia ser implementado para informar o usuário sobre o problema.
+74) A exibição dos dados de análise de sentimentos por meio de tabelas é feita para apresentar as informações de forma organizada e detalhada.
+75) O código não possui uma forma de lidar com a falta de resposta da API do OpenAI, mas poderia ser implementado para lidar com problemas de conexão.
+
+
+!Perguntas sobre o código e o funcionamento da API implementada:
+1) Como é feita a conexão com a API REST?
+2) Quais são os endpoints disponíveis na API REST?
+3) Como é feita a autenticação na API REST?
+4) Quais são os parâmetros necessários para fazer uma requisição na API REST?
+5) Como é feito o tratamento de erros nas requisições à API REST?
+6) Quais são as principais funcionalidades da API REST?
+7) Como é feita a comunicação entre o código e a API REST?
+8) Quais são as bibliotecas utilizadas para realizar as requisições à API REST?
+9) Como é feito o processamento dos dados retornados pela API REST?
+10) Quais são as estruturas de dados utilizadas para armazenar os dados retornados pela API REST?
+11) Como é feita a exibição dos dados retornados pela API REST na interface gráfica?
+12) Quais são os métodos HTTP utilizados para interagir com a API REST?
+13) Como é feito o tratamento de autenticação inválida na API REST?
+14) Quais são os possíveis códigos de status retornados pela API REST e como são tratados no código?
+15) Como é feita a paginação dos resultados retornados pela API REST?
+16) Quais são os limites de requisições na API REST?
+17) Como é feito o controle de acesso aos endpoints da API REST?
+
+*Respostas:
+1) A conexão com a API REST é feita por meio de requisições HTTP utilizando a biblioteca requests do Python.
+2) Os endpoints disponíveis na API REST incluem os métodos GET, POST, PUT e DELETE para interagir com os recursos da API.
+3) A autenticação na API REST é feita por meio de uma chave de API fornecida pelo serviço da API.
+4) Os parâmetros necessários para fazer uma requisição na API REST incluem a URL do endpoint, os dados da requisição e a chave de autenticação.
+5) O tratamento de erros nas requisições à API REST é feito por meio de exceções e mensagens de erro para informar o usuário sobre problemas.
+6) As principais funcionalidades da API REST incluem buscar notícias, analisar sentimentos, exibir gráficos e visualizações, e gerar relatórios.
+7) A comunicação entre o código e a API REST é feita por meio de requisições HTTP para enviar e receber dados.
+8) As bibliotecas utilizadas para realizar as requisições à API REST incluem requests, json e pandas.
+9) O processamento dos dados retornados pela API REST é feito por meio da biblioteca json para converter os dados em formato JSON.
+10) As estruturas de dados utilizadas para armazenar os dados retornados pela API REST incluem dicionários, listas e dataframes.
+11) A exibição dos dados retornados pela API REST na interface gráfica é feita por meio de gráficos, tabelas e visualizações interativas.
+12) Os métodos HTTP utilizados para interagir com a API REST incluem GET para buscar dados, POST para enviar dados, PUT para atualizar dados e DELETE para excluir dados.
+13) O tratamento de autenticação inválida na API REST é feito por meio de mensagens de erro e validação da chave de autenticação.
+14) Os possíveis códigos de status retornados pela API REST incluem 200 para sucesso, 400 para erro de requisição, 401 para autenticação inválida e 500 para erro interno do servidor.
+15) A paginação dos resultados retornados pela API REST é feita por meio de parâmetros de consulta para controlar o número de resultados por página.
+16) Os limites de requisições na API REST são definidos pelo serviço da API e podem incluir limites de taxa, limites de volume e limites de acesso.
+17) O controle de acesso aos endpoints da API REST é feito por meio de autenticação, autorização e validação dos dados enviados nas requisições.
+"""
