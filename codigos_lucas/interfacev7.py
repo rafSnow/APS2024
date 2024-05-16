@@ -6,15 +6,12 @@ import numpy as np # Essa biblioteca é usada para cálculos numéricos
 import tensorflow as tf # Essa biblioteca é usada para criar modelos de aprendizado de máquina
 import matplotlib.pyplot as plt # Essa biblioteca é usada para plotar gráficos
 import tkinter as tk # Essa biblioteca é usada para criar interfaces gráficas
-import threading # Essa biblioteca é usada para executar tarefas em threads separadas
 import praw # Essa biblioteca é usada para acessar a API do Reddit
 import pandas as pd # Essa biblioteca é usada para manipular dados em formato de tabela
-import os # Essa biblioteca é usada para interagir com o sistema operacional
-import re # Essa biblioteca é usada para expressões regulares
-import unicodedata # Essa biblioteca é usada para normalizar caracteres Unicode
-import torch # Essa biblioteca é usada para criar modelos de aprendizado de máquina
 import subprocess # Essa biblioteca é usada para executar comandos do sistema operacional
 import time # Essa biblioteca é usada para lidar com tempo
+import concurrent.futures # Essa biblioteca é usada para executar tarefas em paralelo
+import seaborn as sns # Essa biblioteca é usada para plotar gráficos
 
 from requests.adapters import HTTPAdapter # Essa biblioteca é usada para adaptadores HTTP
 from urllib3.util.retry import Retry # Essa biblioteca é usada para tentativas de solicitação
@@ -40,9 +37,7 @@ from sumy.parsers.html import HtmlParser # Essa biblioteca é usada para analisa
 from sumy.nlp.tokenizers import Tokenizer # Essa biblioteca é usada para tokenização de texto
 from tkinter import Scrollbar, Text, messagebox # Essa biblioteca é usada para criar widgets de texto roláveis e caixas de diálogo
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg # Essa biblioteca é usada para exibir gráficos em interfaces gráficas
-import seaborn as sns # Essa biblioteca é usada para plotar gráficos
 from flask import Flask, request,jsonify, send_from_directory # Essa biblioteca é usada para criar uma API Flask
-import concurrent.futures # Essa biblioteca é usada para executar tarefas em paralelo
 
 # Diretório onde está localizado o arquivo app.py da API Flask
 api_directory = r"C:\Users\Computador\Documents\DOCUMENTOSDIVERSOS\DocumentosFaculdade\5Periodo\APS\DESENVOLVIMENTO\APS2024\codigos_lucas\controller"
@@ -53,14 +48,10 @@ flask_command = ["python", "testeapi.py"]
 # Iniciar a API Flask usando subprocess
 try:
     process = subprocess.Popen(flask_command, cwd=api_directory)
-    time.sleep(5)  # Aguardar 10 segundos para a API iniciar
+    time.sleep(5)  # Aguardar 5 segundos para a API iniciar
     print("API Flask iniciada com sucesso!")
 except Exception as e:
     print("Erro ao iniciar a API Flask:", e)
-
-
-# Baixar as stopwords em português, se ainda não tiver sido feito
-nltk.download('stopwords')
 
 # Configurar as credenciais para acessar a API do Reddit
 reddit = praw.Reddit(
@@ -69,15 +60,21 @@ reddit = praw.Reddit(
     user_agent="aps",
 )
 
+nltk.download('stopwords') # Baixar as stopwords
+# As stopwords são palavras comuns que geralmente não contribuem para o significado de uma frase
+nltk.download('punkt') # Baixar o tokenizador de palavras
+# O 'punkt' é um tokenizador de sentenças pré-treinado para a língua portuguesa
+
 # Defina sua chave da API do OpenAI
 openai.api_key = '---'
 
-# Create a session object
+# Criando uma sessão 
 session = requests.Session()
 retry = Retry(total=5, backoff_factor=0.1, status_forcelist=[ 500, 502, 503, 504 ])
 adapter = HTTPAdapter(max_retries=retry)
 session.mount('http://', adapter)
 session.mount('https://', adapter)
+
 
 def fetch_data(url):
     response = session.get(url)  # Use session.get instead of requests.get
@@ -89,14 +86,30 @@ def mostrar_tabela():
     root.update()  # Atualizar a janela para mostrar a mudança no cursor
     
     url = 'http://localhost:5000/reddit'
-    response = requests.get(url)
+    for i in range(5):  # Retry 5 times
+        try:
+            response = requests.get(url)
+            break  # If the request is successful, break the loop
+        except requests.exceptions.RequestException as e:
+            print(f"Falha na solicitação com erro {e}. Tentando novamente...")
+            time.sleep(2**i)  # Exponential backoff
+    else:
+        print("Falha ao buscar a URL após 5 tentativas.")
 
     # Criar uma nova janela
     janela_tabela = tk.Toplevel(root)
     janela_tabela.title("Tabela de Dados")
 
-    # Maximizar a janela da tabela
-    #janela_tabela.state('zoomed')
+    # Obter as dimensões da tela
+    largura_tela = root.winfo_screenwidth()
+    altura_tela = root.winfo_screenheight()
+
+    # Calcular as coordenadas para centralizar a nova janela
+    x_pos = (largura_tela - largura_janela) // 2
+    y_pos = (altura_tela - altura_janela) // 2
+
+    # Definir a posição da nova janela
+    janela_tabela.geometry(f"{largura_janela}x{altura_janela}+{x_pos}+{y_pos}")
 
     # Criar um frame na nova janela para conter a tabela
     frame_tabela_window = tk.Frame(janela_tabela)
@@ -126,26 +139,24 @@ def mostrar_tabela():
     tabela.column("Método", width=100)
     tabela.column("Cliente IP", width=100)
 
-
     # Ler os dados do Reddit (supondo que esta função existe)
     csv_file_path = r'C:\Users\Computador\Documents\DOCUMENTOSDIVERSOS\DocumentosFaculdade\5Periodo\APS\DESENVOLVIMENTO\APS2024\data\reddit1.csv'
-    
+
     # Ler os dados do arquivo CSV usando pandas
     df = pd.read_csv(csv_file_path)
-    
+
     # Converter os dados para uma lista de listas
     data = df.values.tolist()
-    
 
     # Adicionar os dados à tabela
     for index, row in enumerate(data):
         tabela.insert("", "end", text=index, values=(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7]))
 
     # Adicionar um botão para fechar a janela da tabela
-    botao_fechar_tabela = tk.Button(janela_tabela, text="Fechar Tabela", command=janela_tabela.destroy, borderwidth=3, relief="groove", padx=5, pady=10, bg="#0b4a8a", fg="black", font=("Arial", 12, "bold"), width=25)
+    botao_fechar_tabela = tk.Button(janela_tabela, text="Fechar Tabela", command=janela_tabela.destroy, borderwidth=3, relief="groove", padx=5, pady=10, bg="#0b4a8a", fg="white", font=("Arial", 12, "bold"), width=25)
     botao_fechar_tabela.pack(side=tk.BOTTOM, pady=0)
-    
-    botao_analisar_sentimentos = tk.Button(frame_tabela_window, text="Tabela de Análise de Sentimentos", command=tabelaSentimentos, borderwidth=3, relief="groove", padx=5, pady=10, bg="#0b4a8a", fg="black", font=("Arial", 12, "bold"), width=25)
+
+    botao_analisar_sentimentos = tk.Button(frame_tabela_window, text="Tabela de Análise de Sentimentos", command=tabelaSentimentos, borderwidth=3, relief="groove", padx=5, pady=10, bg="#0b4a8a", fg="white", font=("Arial", 12, "bold"), width=25)
     botao_analisar_sentimentos.pack(side=tk.BOTTOM, pady=0)
 
     tabela.pack(expand=True, fill="both")
@@ -154,14 +165,21 @@ def mostrar_tabela():
     root.config(cursor="")
     root.update()  # Atualizar a janela para mostrar a mudança no cursor
 
-
 def tabelaSentimentos():
-        # Criar uma nova janela
+    # Criar uma nova janela
     janelaSentimentos = tk.Toplevel(root)
     janelaSentimentos.title("Tabela de Análise de Sentimentos")
 
-    # Maximizar a janela da tabela
-    janelaSentimentos.state('zoomed')
+    # Obter as dimensões da tela
+    largura_tela = root.winfo_screenwidth()
+    altura_tela = root.winfo_screenheight()
+
+    # Calcular as coordenadas para centralizar a nova janela
+    x_pos = (largura_tela - largura_janela) // 2
+    y_pos = (altura_tela - altura_janela) // 2
+
+    # Definir a posição da nova janela
+    janelaSentimentos.geometry(f"{largura_janela}x{altura_janela}+{x_pos}+{y_pos}")
 
     # Criar um frame na nova janela para conter a tabela
     frameSentimentos_window = tk.Frame(janelaSentimentos)
@@ -196,11 +214,13 @@ def tabelaSentimentos():
         tabeladeSentimentos.insert("", "end", text=index, values=(row[0], row[1], row[2], row[3]))
     print(f"Dados ausentes na linha {index + 1}. Ignorando esta linha.")
 
-
     # Botão mostrar dashboard
-    button_mostrar_dashboard = tk.Button(frameSentimentos_window, text="Mostrar DashBoard", command= mostrarDashboard, borderwidth=3, relief="groove", padx=5, pady=10, bg="#0b4a8a", fg="black", font=("Arial", 12, "bold"), width=25)
+    button_mostrar_dashboard = tk.Button(frameSentimentos_window, text="Mostrar DashBoard", command= mostrarDashboard, borderwidth=3, relief="groove", padx=5, pady=10, bg="#0b4a8a", fg="white", font=("Arial", 12, "bold"), width=25)
     button_mostrar_dashboard.pack(side="left", padx=0)
 
+    # Adicionar um botão para fechar a janela da tabela
+    botao_fechar_tabela = tk.Button(janelaSentimentos, text="Fechar Tabela", command=janelaSentimentos.destroy, borderwidth=3, relief="groove", padx=5, pady=10, bg="#0b4a8a", fg="white", font=("Arial", 12, "bold"), width=25)
+    botao_fechar_tabela.pack(side=tk.BOTTOM, pady=0)
 
     tabeladeSentimentos.pack(expand=True, fill="both")
 
@@ -230,10 +250,6 @@ def mostrarDashboard():
     # Layout
     plt.tight_layout(h_pad=2)
 
-    # # Maximizar a figura
-    # manager = plt.get_current_fig_manager()
-    # manager.window.state('zoomed')
-
     # Exibir a figura maximizada
     plt.show()
 
@@ -245,7 +261,7 @@ def mostrarDashboard():
     num_colunas = 2
 
     # Criar subplots
-    fig, axes = plt.subplots(num_linhas, num_colunas, figsize=(15, 10), gridspec_kw={'hspace': 0.4})
+    fig, axes = plt.subplots(num_linhas, num_colunas, figsize=(16, 8), gridspec_kw={'hspace': 0.4})
 
     # Ajustar o espaçamento entre os subplots manualmente
     plt.subplots_adjust(hspace=0.6, wspace=0.4)
@@ -273,16 +289,12 @@ def mostrarDashboard():
         coluna = idx % num_colunas
         fig.delaxes(axes[linha, coluna])
 
-    # # Maximizar a figura
-    # manager = plt.get_current_fig_manager()
-    # manager.window.state('zoomed')
-
     plt.show()
 
     # Plotagem do Gráfico de dispersão.
     
     # Plot
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(16, 8))
 
     # Gráfico de dispersão
     sns.scatterplot(data=df, x='Porcentagem Positiva', y='Porcentagem Negativa', hue='Palavra-chave', palette='viridis')
@@ -297,11 +309,7 @@ def mostrarDashboard():
 
     plt.legend(title='Palavra-chave')
 
-    # # Maximizar a figura
-    # manager = plt.get_current_fig_manager()
-    # manager.window.state('zoomed')
     plt.show()
-
 
     # Gráfico de pizza
     # Converter a coluna Data para o tipo datetime
@@ -311,7 +319,7 @@ def mostrarDashboard():
     dias_selecionados = ['08-05-2024', '09-05-2024', '10-05-2024', '11-05-2024', '12-05-2024']
 
     # Criar uma figura para os subplots
-    fig, axs = plt.subplots(nrows=1, ncols=len(dias_selecionados), figsize=(18, 6))
+    fig, axs = plt.subplots(nrows=1, ncols=len(dias_selecionados), figsize=(16, 8))
 
     # Iterar sobre os dias selecionados
     for i, data_selecionada in enumerate(dias_selecionados):
@@ -335,22 +343,8 @@ def mostrarDashboard():
     # Ajustar o layout da figura
     plt.tight_layout()
 
-    # # Maximizar a figura
-    # manager = plt.get_current_fig_manager()
-    # manager.window.state('zoomed')
-
     # Exibir a figura com os subplots
     plt.show()
-
-# Função para obter o conteúdo HTML de um link
-def get_html_content(url):
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        return response.text
-    except requests.RequestException as e:
-        print(f"Erro ao obter o conteúdo HTML do URL {url}: {e}")
-        return None
 
 # Lista de feeds RSS dos sites que serão buscadas as notícias
 rss_feeds = {
@@ -359,57 +353,6 @@ rss_feeds = {
     "Instituto Akatu": "https://www.akatu.org.br/feed/",
     "O Eco": "https://www.oeco.org.br/feed/",
 }
-
-# Função para coletar todas as palavras de um texto
-def collect_words(text):
-    words = word_tokenize(text)
-    words = [word.lower() for word in words if word.isalnum()]
-    return words
-
-titles_list = []  # Lista para armazenar os títulos das notícias
-
-# Função para imprimir as principais notícias de um feed RSS com resumo
-def print_top_news_rss_with_summary(site_name, url, max_news=5):
-    global titles_list  # Usando a lista global dentro da função
-
-    # Analisa o feed RSS
-    feed = feedparser.parse(url)
-
-    # Imprime cabeçalho
-    #print(f"Principais notícias de {site_name}:")
-    #print("="*50)
-
-    # Itera pelas entradas do feed (notícias)
-    for i, entry in enumerate(feed.entries[:max_news]):
-        #print(f"Notícia {i+1}:")
-        #print(entry.title, '.')  # Imprime o título da notícia
-        titles_list.append(entry.title)  # Adiciona o título à lista
-        #print("\nResumo:")
-        summary = get_summary(entry.link)  # Obtém o resumo da notícia
-        #print(summary)  # Imprime o resumo
-        #print("-"*50)
-
-# Função para obter o resumo do conteúdo de um link
-def get_summary(url):
-    LANGUAGE = "portuguese"
-    SENTENCES_COUNT = 3
-
-    parser = HtmlParser.from_url(url, Tokenizer(LANGUAGE))
-    stemmer = Stemmer(LANGUAGE)
-
-    summarizer = Summarizer(stemmer)
-    summarizer.stop_words = get_stop_words(LANGUAGE)
-
-    summary = summarizer(parser.document, SENTENCES_COUNT)
-
-    return ' '.join([str(sentence) for sentence in summary])
-
-
-# Itera sobre a lista de feeds RSS e imprime as principais notícias de cada um com resumo
-for site, rss_feed in rss_feeds.items():
-    # Chama a função para imprimir as notícias com resumo de cada feed
-    print_top_news_rss_with_summary(site, rss_feed)
-    #print("\n")  # Imprime uma linha em branco entre os resultados
 
 # Lista de palavras relacionadas ao meio ambiente que queremos buscar
 environment_related_words = [ # Lista de palavras relacionadas ao meio ambiente
@@ -437,294 +380,225 @@ environment_related_words = [ # Lista de palavras relacionadas ao meio ambiente
     "impacto", "alteração", "degradante", "emissão"
 ]
 
-# Coleta todas as palavras das notícias
-all_words = []
-for site, rss_feed in rss_feeds.items():
+# Dicionário para armazenar o conteúdo HTML em cache
+html_cache = {}
+
+# Lista para armazenar os títulos das notícias
+titles_list = []  
+
+# Dicionário para armazenar resumos em cache
+summary_cache = {}
+
+# Função para obter o conteúdo HTML de um link (com cache)
+def get_html_content(url):
+    if url in html_cache:
+        return html_cache[url]
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        html_content = response.text
+        # Adicionar ao cache
+        html_cache[url] = html_content
+        return html_content
+    except requests.RequestException as e:
+        print(f"Erro ao obter o conteúdo HTML do URL {url}: {e}")
+        return None
+
+# Função para coletar todas as palavras de um texto de forma eficiente
+def collect_words(text):
+    words = word_tokenize(text.lower())
+    words = [word for word in words if word.isalnum()]
+    return words
+
+def get_summary(url):
+    if url in summary_cache:
+        return summary_cache[url]
+
+    LANGUAGE = "portuguese"
+    SENTENCES_COUNT = 3
+    parser = HtmlParser.from_url(url, Tokenizer(LANGUAGE))
+    stemmer = Stemmer(LANGUAGE)
+    summarizer = Summarizer(stemmer)
+    summarizer.stop_words = get_stop_words(LANGUAGE)
+    summary = summarizer(parser.document, SENTENCES_COUNT)
+    summary_text = ' '.join([str(sentence) for sentence in summary])
+
+    # Adicionar ao cache
+    summary_cache[url] = summary_text
+    return summary_text
+
+def fetch_news_and_words(site, rss_feed):
+    global titles_list
     feed = feedparser.parse(rss_feed)
+    news_list = []
+    all_words = []
+    count = 0
     for entry in feed.entries:
+        if count >= 3:  # Stop after fetching 3 news items
+            break
+        titles_list.append(entry.title) 
+        news_list.append((entry.title, get_summary(entry.link)))
         html_content = get_html_content(entry.link)
         if html_content:
             soup = BeautifulSoup(html_content, 'html.parser')
             text = soup.get_text()
             words = collect_words(text)
             all_words.extend(words)
+        count += 1
+    return news_list, all_words
 
-# Define as stopwords em português
-stop_words = set(stopwords.words('portuguese'))
+def update_text_widget(news):
+    # Configurar a tag "bold" fora do loop
+    text_widget.tag_configure("bold", font=("Arial", 12, "bold"))
+    text_widget.insert(tk.END, "Sites de notícias utilizados: Greenpeace Brasil, G1 - Natureza, Instituto Akatu e O Eco.\n", "bold") 
 
-# Remove stopwords
-filtered_words = [word for word in all_words if word not in stop_words]
+    for site, news_items in news.items():
+        text_widget.insert(tk.END, "=" * 50 + "\n")
+        text_widget.insert(tk.END, f"Últimas notícias de {site}:\n\n", "bold")
+        for i, (title, summary) in enumerate(news_items):
+            text_widget.insert(tk.END, f"Notícia {i + 1}: ","bold")
+            text_widget.insert(tk.END, f"{title}\n\nResumo:\n", "bold")
+            text_widget.insert(tk.END, summary + "\n")
+            text_widget.insert(tk.END, "-" * 90 + "\n")
 
-# Identificar e contar as palavras relacionadas ao meio ambiente
-environment_words = [
-    word for word in filtered_words if word in environment_related_words]
-word_freq = nltk.FreqDist(environment_words)
-
-# Obter as palavras mais comuns e suas frequências
-top_words, frequencies = zip(*word_freq.most_common(10))
-
-# Definir dicionário de polaridades para as palavras
-polarities = {}
-for word in top_words:
-    blob = TextBlob(word)
-    polarity = blob.sentiment.polarity
-    if polarity > 0:
-        polarities[word] = 'Boa'
-    elif polarity < 0:
-        polarities[word] = 'Ruim'
-    else:
-        polarities[word] = 'Neutra'
-
-# Contagem das polaridades
-polarity_counts = {'Boa': 0, 'Ruim': 0, 'Neutra': 0}
-for polarity in polarities.values():
-    polarity_counts[polarity] += 1
-
-# Dividir os dados em conjuntos de treinamento e teste
-words_array = np.array(top_words)
-frequencies_array = np.array(frequencies)
-X_train, X_test, y_train, y_test = train_test_split(
-    words_array, frequencies_array, test_size=0.2, random_state=42)
-
-# Convert text data to numerical data
-tokenizer = KerasTokenizer(num_words=5000)
-tokenizer.fit_on_texts(X_train)
-
-X_train = tokenizer.texts_to_sequences(X_train)
-X_test = tokenizer.texts_to_sequences(X_test)
-
-# Find the length of the longest sequence in X_train
-sequence_length = max([len(seq) for seq in X_train])
-
-# Pad sequences
-X_train = pad_sequences(X_train, padding='post', maxlen=sequence_length)
-X_test = pad_sequences(X_test, padding='post', maxlen=sequence_length)
-
-# Also make sure to convert your labels to numpy arrays
-y_train = np.array(y_train)
-y_test = np.array(y_test)
-
-# Implementação da rede neural
-model_tensor = Sequential()
-model_tensor.add(Dense(128, activation='relu', input_shape=(X_train.shape[1],)))
-model_tensor.add(Dense(64, activation='relu'))
-model_tensor.add(Dense(1, activation='linear'))
-model_tensor.compile(optimizer='adam', loss='mean_squared_error', metrics=['mae'])
-model_tensor.fit(X_train, y_train, epochs=50, batch_size=32, validation_split=0.2)
-
-loss, mae = model_tensor.evaluate(X_test, y_test)
-#print(f'Loss: {loss}, MAE: {mae}')
-
-predictions = model_tensor.predict(X_test)
-
-# Convertendo as palavras em formato de dicionário para facilitar o envio para o GPT
-word_dict = dict(zip(top_words, frequencies))
-
-# Convertendo a lista de títulos em uma única string
-titles_string = '\n'.join(titles_list)
-
-# Imprimir a lista de títulos e suas frequências
-prompt_text = ""  # Define a variável prompt_text
-prompt_text += "Palavras e suas frequências:\n"
-for word, freq in zip(top_words, frequencies):
-    prompt_text += f"- {word}: {freq} vezes\n"
-
-
-# Adicionar os títulos ao prompt_text
-prompt_text += "\nTítulos das notícias coletadas:\n\n"
-prompt_text += titles_string
-prompt_text += "\n\nO que você pode concluir a respeito? Quero uma análise detalhada, ampla, falando das notícias, números e também das implicações, tendências e possíveis ações a serem tomadas em relação ao tema."
-
-#print("Texto para GPT:\n", prompt_text)
-
-# Enviando o texto para o GPT para gerar o relatório
-response = openai.ChatCompletion.create(
-    model="gpt-3.5-turbo",  # Tentar um modelo diferente
-    messages=[
-        {"role": "user", "content": prompt_text},
-    ],
-    temperature=0.85,  # Controla a aleatoriedade da saída do modelo
-    max_tokens=1200  # Limita o comprimento da saída do modelo
-)
-
-summary = "No output from the model"
-
-if response and response.choices and len(response.choices) > 0:
-    summary = response.choices[0].message['content'].strip()
-
-# print("\n\nRelatório das notícias relacionadas ao Meio Ambiente:")
-# print('\n', summary)
-
-# Função para fechar a janela ao clicar no botão "Fechar"
-# def close_window():
-#     root.destroy()
-
-# Criar uma janela principal
-# root = tk.Tk()
-# root.title("Relatório das Notícias")
-
-# # Criar um widget de texto rolável para exibir o relatório
-# report_text = scrolledtext.ScrolledText(root, width=80, height=30)
-# report_text.pack()
-
-# # Definir o texto do relatório
-# report_text.insert(tk.END, f"\n\nRelatório das notícias relacionadas ao Meio Ambiente:\n\n{summary}\n\n")
-
-# # Criar um botão para fechar a janela
-# close_button = tk.Button(root, text="Fechar", command=close_window)
-# close_button.pack()
-
-# Iniciar o loop principal da interface gráfica
-# root.mainloop()
-
-# # Imprimir as polaridades das palavras
-# print("\nPolaridades das Palavras:")
-# for word, polarity in polarities.items():
-#     print(f"{word}: {polarity}")
-
-# # Gráfico de barras das palavras mais repetidas
-# plt.figure(figsize=(10, 6))
-# plt.bar(top_words, frequencies)
-# plt.xlabel('Palavras')
-# plt.ylabel('Frequência')
-# plt.title('Palavras Mais Repetidas Relacionadas ao Meio Ambiente')
-# plt.xticks(rotation=45, ha='right')
-# plt.tight_layout()
-# plt.show()
-
-# # Gráfico de barras horizontais da análise de sentimento das palavras
-# plt.figure(figsize=(8, 6))
-# plt.barh(list(polarity_counts.keys()), list(polarity_counts.values()), color=['green', 'red', 'gray'])
-# plt.xlabel('Contagem')
-# plt.ylabel('Sentimento')
-# plt.title('Distribuição da Análise de Sentimento das Palavras')
-# plt.grid(axis='x')
-# plt.show()
-
-# Criando as janelas:
-
-# Definindo a função para buscar notícias 
-def buscar_noticias():
+# Defina a função para o botão 1
+def buscar_noticias_async():
     # Mudar o cursor para um indicador de espera
     root.config(cursor="wait")
     root.update()  # Atualizar a janela para mostrar a mudança no cursor
-    global titles_list  # Utilizando a lista global
 
+    global summary, word_dict
     # Limpa o texto existente no widget de texto
     text_widget.delete(1.0, tk.END)
+    # Configurar a tag "bold" fora do loop
+    text_widget.tag_configure("bold", font=("Arial", 12, "bold"))
 
-    # Itera sobre os sites e imprime as notícias com resumo
-    for site, rss_feed in rss_feeds.items():
-        text_widget.insert(tk.END, f"Principais notícias de {site}:\n")
-        text_widget.insert(tk.END, "=" * 50 + "\n")
-        
-        feed = feedparser.parse(rss_feed)
+    text_widget.insert(tk.END, "Aguarde um momento, buscando notícias...\n", "bold")
+    text_widget.update_idletasks()  # Atualiza o widget para mostrar a mensagem imediatamente
 
-        for i, entry in enumerate(feed.entries[:5]):  # Imprime apenas as 5 principais notícias
-            text_widget.insert(tk.END, f"Notícia {i + 1}:\n")
-            text_widget.insert(tk.END, f"{entry.title}\n\nResumo:\n")
-            summary = get_summary(entry.link)
-            text_widget.insert(tk.END, summary + "\n\n")
-            titles_list.append(entry.title)  # Adiciona o título à lista
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = {executor.submit(fetch_news_and_words, site, rss_feed): site for site, rss_feed in rss_feeds.items()}
+        news = {}
+        all_words = []
+        for future in concurrent.futures.as_completed(futures):
+            site = futures[future]
+            news_site, words_site = future.result()
+            news[site] = news_site
+            all_words.extend(words_site)
+    text_widget.delete(1.0, tk.END)
+    update_text_widget(news)
 
-            text_widget.insert(tk.END, "-" * 50 + "\n")
+    # Define as stopwords em português
+    stop_words = set(stopwords.words('portuguese'))
+
+    # Remove stopwords
+    filtered_words = [word for word in all_words if word not in stop_words]
+
+    # Identificar e contar as palavras relacionadas ao meio ambiente
+    environment_words = [word for word in filtered_words if word in environment_related_words]
+    word_freq = nltk.FreqDist(environment_words)
+
+    # Obter as palavras mais comuns e suas frequências
+    top_words, frequencies = zip(*word_freq.most_common(10))
+
+    # Convertendo as palavras em formato de dicionário para facilitar o envio para o GPT
+    word_dict = dict(zip(top_words, frequencies))
+
+    # Convertendo a lista de títulos em uma única string
+    titles_string = '\n'.join([title for news_items in news.values() for title, _ in news_items])
+
+    # Imprimir a lista de títulos e suas frequências
+    prompt_text = f"Palavras e suas frequências:\n" + ''.join([f'- {word}: {freq} vezes\n' for word, freq in zip(top_words, frequencies)]) + f"\nTítulos das notícias coletadas:\n\n{titles_string}\n\nPor favor, analise minuciosamente as notícias ambientais e a frequência das palavras relacionadas ao meio ambiente contidas nos conteúdos das notícias, destacando os principais eventos, números relevantes, implicações significativas, tendências emergentes e sugestões concretas de ações a serem tomadas em relação ao tema."
+
+    #print(prompt_text)
+
+    # Enviando o texto para o GPT para gerar o relatório
+
+
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo-0125",  # Tentar um modelo diferente
+        messages=[
+            {"role": "user", "content": prompt_text},
+        ],
+        temperature=0.8,  # Controla a aleatoriedade da saída do modelo
+        max_tokens=1250 # Limita o comprimento da saída do modelo
+    )
+
+    summary = "Resposta não disponível."
+
+    if response and response.choices and len(response.choices) > 0:
+        summary = response.choices[0].message['content'].strip()
+
     # Mudar o cursor de volta para o padrão
     root.config(cursor="")
     root.update()  # Atualizar a janela para mostrar a mudança no cursor
 
-# Função para plotar o gráfico em uma nova janela
-def plotar_grafico():
-    # Criando uma nova janela para o gráfico
-    janela_grafico = tk.Toplevel(root)
-    janela_grafico.title("Gráfico de Barras")
-    # Criando uma figura para o gráfico
-    fig, ax = plt.subplots(figsize=(11, 8))
-
-    # Plotando o gráfico de barras
-    ax.bar(top_words, frequencies)
-    ax.set_xlabel('Palavras')
-    ax.set_ylabel('Frequência')
-    ax.set_title('Palavras Mais Repetidas Relacionadas ao Meio Ambiente')
-    ax.tick_params(axis='x', rotation=45)  # Ajustando a rotação dos ticks no eixo x
-
-    # Ajustando a posição do subplot e o layout da legenda
-    plt.tight_layout()
-    plt.subplots_adjust(bottom=0.25)  # Ajuste a proporção inferior para acomodar a legenda
-
-    # Adicionando o gráfico à nova janela usando FigureCanvasTkAgg
-    canvas = FigureCanvasTkAgg(fig, master=janela_grafico)
-    canvas.draw()
-    canvas.get_tk_widget().pack()
-
 # Defina a função para o botão 3
 def exibir_analise():
     global summary  # Certifique-se de ter a variável global summary disponível
+    # Configurar a tag "bold" fora do loop
+    text_widget.tag_configure("bold", font=("Arial", 12, "bold"))
+
+    try:
+        if summary:
+            # Limpa o texto existente no widget de texto
+            text_widget.delete(1.0, tk.END)
+
+            # Insere o conteúdo da análise no widget de texto
+            text_widget.insert(tk.END, "Relatório das notícias relacionadas ao Meio Ambiente:\n\n", "bold")
+            text_widget.insert(tk.END, summary)
+
+    except NameError:
+        # Limpa o texto existente no widget de texto
+        text_widget.delete(1.0, tk.END)
+
+        # Informa ao usuário que eles precisam buscar notícias primeiro
+        text_widget.insert(tk.END, "Para executar essa ação, primeiro clique no botão 'Últimas Notícias Ambientais'.", "bold")
+
+# Função para limpar o frame:
+def limpar_tela():
+    # Mudar o cursor para um indicador de espera
+    root.config(cursor="wait")
+    root.update()  # Atualizar a janela para mostrar a mudança no cursor
 
     # Limpa o texto existente no widget de texto
     text_widget.delete(1.0, tk.END)
 
-    # Insere o conteúdo da análise no widget de texto
-    text_widget.insert(tk.END, "Relatório das notícias relacionadas ao Meio Ambiente:\n\n")
-    text_widget.insert(tk.END, summary)
+    # Mudar o cursor de volta para o padrão
+    root.config(cursor="")
+    root.update()  # Atualizar a janela para mostrar a mudança no cursor
 
+# Criando as janelas:
 # Criando a janela principal
 root = tk.Tk()
-root.title("Notícias sobre o Meio Ambiente")
+root.title("Meio Ambiente e Análise de Sentimento de Notícias e Postagens em Redes Sociais")
 
-# Obtendo as dimensões da tela
-largura_tela = root.winfo_screenwidth()
-altura_tela = root.winfo_screenheight()
+# Definindo o tamanho da janela
+largura_janela = 1200
+altura_janela = 800
 
-# # Definindo o tamanho da janela
-largura_janela = 1000
-altura_janela = 600
+# Definindo o tamanho do frame manualmente
+largura_frame = 1000
+altura_frame = 600
 
-# # Calculando a posição x e y da janela para centralizá-la
-posicao_x = int((largura_tela - largura_janela) / 2)
-posicao_y = int((altura_tela - altura_janela) / 2)
+# Calculando a posição x e y da janela para centralizá-la
+posicao_x = int((root.winfo_screenwidth() - largura_janela) / 2)
+posicao_y = int((root.winfo_screenheight() - altura_janela) / 2)
 
-# # Definindo a posição inicial da janela
+# Definindo a posição inicial da janela
 root.geometry(f"{largura_janela}x{altura_janela}+{posicao_x}+{posicao_y}")
 
-# # Exibir a janela e atualizá-la para obter suas dimensões
-root.update()
-
-# Obtendo as dimensões da janela principal
-window_width = root.winfo_width()
-window_height = root.winfo_height()
-
-# Obtendo as dimensões do frame
-frame_width = window_width // 1.6  # Define a largura do frame como 1000 pixels
-frame_height = 400 # Define a altura do frame como 500 pixels
-
-# Calculando as coordenadas x e y para centralizar o frame horizontalmente e 20 pixels a partir da borda superior
-x_frame = (window_width - frame_width) // 2
-y_frame = 20
-
-def centralizar_frame(event=None):
-    # Obtendo as dimensões atualizadas da tela
-    screen_width = root.winfo_width()
-    screen_height = root.winfo_height()
-
-    # Calculando as coordenadas x e y para centralizar o frame
-    x_frame = (screen_width - frame_width) // 2
-    y_frame = (screen_height - frame_height) // 2
-
-    # Reposicionando o frame centralizado
-    frame_space.place(x=x_frame, y=y_frame)
-
-# Criando um frame para o espaço em branco
-frame_space = tk.Frame(root, width=frame_width, height=frame_height, bg="white")
-frame_space.place(x=x_frame, y=y_frame)  # Definindo a posição do frame
+# Criando um frame com tamanho específico
+frame_space = tk.Frame(root, width=largura_frame, height=altura_frame, bg="white")
+frame_space.pack(padx=20, pady=20, fill="both", expand=True)  # Centralizando e expandindo o frame
 
 # Adicionando um rótulo para exibir o texto dentro do frame
 text_widget = tk.Text(frame_space, wrap="word", bg="white")
-text_widget.pack(side="left", fill="y")
+text_widget.pack(side="left", fill="both", expand=True)
 
-#root.state('zoomed')
-
-# Vinculando o evento de redimensionamento da janela à função de centralização do frame
-root.bind("<Configure>", centralizar_frame)
+# Mudando a fonte e o tamanho da fonte no text_widget
+font_info = ("Arial", 12)  # Fonte "Arial" com tamanho 12
+text_widget.configure(font=font_info)
 
 # Adicionando uma barra de rolagem vertical
 scrollbar_y = tk.Scrollbar(frame_space, orient="vertical", command=text_widget.yview)
@@ -736,35 +610,23 @@ button_frame = tk.Frame(root)
 button_frame.pack(side="bottom", pady=10)  # Posicionando o frame na parte inferior da janela com algum espaço
 
 # Criando o botão 1 com a função definida acima
-button1_buscar_noticias = tk.Button(button_frame, text="Principais Notícias",command=buscar_noticias, borderwidth=3, relief="groove", padx=5, pady=10, bg="#074207", fg="black", font=("Arial", 12, "bold"), width=25)
+button1_buscar_noticias = tk.Button(button_frame, text="Últimas Notícias Ambientais",command=buscar_noticias_async, borderwidth=3, relief="groove", padx=5, pady=10, bg="#074207", fg="white", font=("Arial", 12, "bold"), width=30)
 button1_buscar_noticias.pack(side="left", padx=0)  # Posicionando o botão à esquerda dentro do frame
 
-# # Modificando o botão 2 para chamar a função plotar_grafico
-# button2_plotar_grafico = tk.Button(button_frame, text="Gráfico de Notícias",command=plotar_grafico, borderwidth=3, relief="groove", padx=5, pady=10, bg="#cc990e", fg="black", font=("Arial", 12, "bold"), width=25)
-# button2_plotar_grafico.pack(side="left", padx=0)  # Posicionando o botão à esquerda dentro do frame
-
 # Modificando o botão 3 para chamar a função exibir_analise
-button3_exibir_analise = tk.Button(button_frame, text="Análise das Notícias",command=exibir_analise, borderwidth=3, relief="groove", padx=5, pady=10, bg="#0b4a8a", fg="black", font=("Arial", 12, "bold"), width=25)
+button3_exibir_analise = tk.Button(button_frame, text="Análise das Notícias Ambientais",command=exibir_analise, borderwidth=3, relief="groove", padx=5, pady=10, bg="#0b4a8a", fg="white", font=("Arial", 12, "bold"), width=30)
 button3_exibir_analise.pack(side="left", padx=0)  # Posicionando o botão à esquerda dentro do frame
 
 # Botão mostrar tabela
-button_mostrar_tabela = tk.Button(button_frame, text="Tabela e Gráficos de Análise de Sentimento", command=mostrar_tabela, borderwidth=3, relief="groove", padx=5, pady=10, bg="#0b4a8a", fg="black", font=("Arial", 12, "bold"), width=40)
+button_mostrar_tabela = tk.Button(button_frame, text="Tabela e Gráficos de Análise de Sentimento", command=mostrar_tabela, borderwidth=3, relief="groove", padx=5, pady=10, bg="#074207", fg="white", font=("Arial", 12, "bold"), width=37)
 button_mostrar_tabela.pack(side="left", padx=0)
 
+# Botão limpar frame
+button_limpar_tela = tk.Button(button_frame, text="Limpar Tela", command=limpar_tela, borderwidth=3, relief="groove", padx=5, pady=10, bg="#0b4a8a", fg="white", font=("Arial", 12, "bold"), width=15)
+button_limpar_tela.pack(side="left", padx=0)
 
 # Definindo a cor de fundo da janela
 root.configure(background="#422407")
 
 # Iniciando o loop principal
 root.mainloop()
-
-"""
-# O código acima cria uma interface gráfica simples com três botões que permitem buscar as principais notícias, plotar um gráfico de barras das palavras mais repetidas e exibir uma análise escrita das notícias. A análise escrita é gerada pelo GPT-3 com base nos títulos das notícias coletadas.
-# Ele também exibe as principais notícias de diferentes sites relacionados ao meio ambiente, extrai palavras-chave, analisa o sentimento das palavras e gera um relatório detalhado das notícias.
-# A interface gráfica é criada usando a biblioteca Tkinter, e os gráficos são plotados usando a biblioteca Matplotlib.
-# O código é executado em uma única thread, mas a busca de notícias é feita em uma thread separada para evitar bloqueios na interface gráfica.
-# A análise escrita das notícias é gerada pelo GPT-3 usando a API da OpenAI.
-# O código pode ser executado em qualquer ambiente Python com as bibliotecas necessárias instaladas.
-# Uma curiosidade sobre o código é que ele utiliza a análise de sentimentos para identificar se as palavras relacionadas ao meio ambiente têm uma conotação positiva, negativa ou neutra.
-# E pode ser usado para acompanhar as notícias sobre o meio ambiente e gerar relatórios automatizados com base nessas notícias.
-"""
